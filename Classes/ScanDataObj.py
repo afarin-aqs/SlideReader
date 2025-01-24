@@ -4,18 +4,19 @@ import inspect
 class ScanData:
     def __init__(
             self, file_name, clusters_dict=None, blocks_dict=None, backup_clusters_dict=None,
-            backup_blocks_dict=None,assay='SD4', scan_size=5, block_ncol=4, block_nrow=16, avg_spot_r=25,
-            avg_spot_distance=25, block_size=700, cAb_names=None, preprocess_params=None, hough_params=None,
-            DBSCAN_params=None
+            backup_blocks_dict=None, preprocess_params=None, circle_finding_params_hough=None,
+            clustering_params_DBSCAN=None, cAb_names=None, avg_spot_r=20, avg_spot_distance=25, 
+            default_assay='SD4', default_scan_size=5, default_block_ncol=4, default_block_nrow=16,
+            default_block_size=850,
     ):
         self.file_name = file_name
-        self.assay = assay
-        self.scan_size = scan_size
-        self.block_ncol = block_ncol
-        self.block_nrow = block_nrow
+        self.assay = default_assay
+        self.scan_size = default_scan_size
+        self.block_ncol = default_block_ncol
+        self.block_nrow = default_block_nrow
         self.avg_spot_r = avg_spot_r
         self.avg_spot_distance = avg_spot_distance
-        self.block_size = block_size
+        self.block_size = default_block_size
         if not clusters_dict:
             self.clusters_dict = {}
         if not blocks_dict:
@@ -27,11 +28,33 @@ class ScanData:
         if not cAb_names:
             self.cAb_names = []
         if not preprocess_params:
-            self.preprocess_params = {}
-        if not hough_params:
-            self.hough_params = {}
-        if not DBSCAN_params:
-            self.DBSCAN_params = {}
+            preprocess_params = {
+                'blur_kernel_size': 19,
+                'contrast_thr': 650,
+                'canny_edge_thr1': 100,
+                'canny_edge_thr2': 10
+            }
+        if not circle_finding_params_hough:
+            circle_finding_params_hough = {
+                'method_name': 'Hough',
+                'dp': 1.1,
+                'minDist': 40,
+                'param1': 19,
+                'param2': 21,
+                'minRadius': 14,
+                'maxRadius': 22,
+            }
+        if not clustering_params_DBSCAN:
+            clustering_params_DBSCAN = {
+                'eps': 1200,  # lower means harder
+                'min_samples': 4,
+                'x_power': 3,
+                'y_power': 7,
+                # 'extra_y_cost': True
+            }
+        self.circle_finding_params_hough = circle_finding_params_hough
+        self.clustering_params_DBSCAN = clustering_params_DBSCAN
+        self.preprocess_params = preprocess_params
 
     def get_clusters_dict(self):
         return self.clusters_dict
@@ -54,7 +77,7 @@ class ScanData:
         self.backup_blocks_dict = {}
 
 
-    def set_rest_of_params(self,debug=False):
+    def set_assay_scan_size_dependent_params(self, debug=False):
         if self.assay == 'OF':
             self.block_ncol = 3
             self.block_nrow = 8
@@ -68,19 +91,9 @@ class ScanData:
             if self.scan_size == 10:
                 self.block_size = 400
             elif self.scan_size == 5:
-                self.block_size = 800
+                self.block_size = 850
         else:
             print(f'assay cannot be {self.assay}! -> either OF or SD4')
-
-        if self.scan_size == 10:
-            self.avg_spot_r = 20  # radius of each spot (in pixels)
-            self.avg_spot_distance = 20
-        elif self.scan_size == 5:
-            self.avg_spot_r= 19  # radius of each spot (in pixels)
-            self.avg_spot_distance = 25
-        else:
-            print(f"don't have params for scan size {self.scan_size}")
-
         if debug:
             print(self.__dict__)
 
@@ -160,6 +173,7 @@ def create_new_scan_data(file_name,debug=False):
 
 def get_scan_data(file_name:str) -> ScanData:
     if file_name not in all_scan_data:
+        print(f'{file_name} not in all_scan_data. returning a new scan data!')
         return None
     return all_scan_data[file_name]
 
@@ -170,6 +184,36 @@ def update_scan_data_dict(scan_data):
     all_scan_data[scan_data.file_name] = scan_data
 
 
+def init_or_reset_params(reset=False, file_name=None, input_param_dict=None, debug=False):
+    scan_data = get_scan_data(file_name)
+    if scan_data is not None and not reset:
+        print(f'Skipping param initiation because they are already loaded from pickle files for {file_name}')
+        return
+
+    if scan_data is None:
+        scan_data = create_new_scan_data(file_name=file_name, debug=debug)
+
+    if input_param_dict is None:
+        input_param_dict = {} #anything not given as input, will be set as its default value
+
+    key_name_correction = {
+        'preprocess_params': ['pp','image_preprocessing_params'],
+        'circle_finding_params_hough': ['cf','hough_circle_finding_params', 'circle_finding_params','hough_params'],
+        'clustering_params_DBSCAN': ['cl','clustering_params', 'DBSCAN_clustering_params','DBSCAN_params'],
+    }
+    for right_key, list_of_possible_names in key_name_correction.items():
+        for wrong_key in list_of_possible_names:
+            if wrong_key in input_param_dict.keys():
+                input_param_dict[right_key] = input_param_dict.pop(wrong_key)
+
+    scan_data.set_new_params(input_param_dict,debug=debug)
+    scan_data.set_assay_scan_size_dependent_params(debug=debug)
+    update_scan_data_dict(scan_data)
+    print(f'Successfully set the params for {file_name} :)')
+    return
+
+
+#%% Section two is images!
 images_dict = {}
 
 def add_to_images_dict(file_name, dict_key, dict_value):

@@ -214,7 +214,7 @@ def image_preprocessing(input_image, params=None, debug=False, plot_images=False
     if params['canny_edge_thr1']:
         output_image = cv2.Canny(output_image, threshold1=params['canny_edge_thr1'],
                                  threshold2=params['canny_edge_thr2'])
-        debug_report(f'did thecanny edge detection', debug)
+        debug_report(f'did the canny edge detection', debug)
 
     display_in_console(image=output_image, plot_images=plot_images)
     return output_image
@@ -222,8 +222,10 @@ def image_preprocessing(input_image, params=None, debug=False, plot_images=False
 
 # %%
 ## Circle Finding
-def show_circles_on_plot(input_image, circles_vec=[], debug=False, fig_size=None):
-    debug_report(f'running show_circles_on_plot with {len(circles_vec)} circles', debug)
+def show_circles_on_plot(input_image, circles_vec=None, debug=False, fig_size=None):
+    debug_report(f'** running show_circles_on_plot with {len(circles_vec)} circles', debug)
+    if circles_vec is None:
+        circles_vec = []
     temp_plot_image = give_scaled_log_image(input_image, debug).astype(np.uint8)
     for x, y, r in circles_vec:
         cv2.circle(temp_plot_image, (x, y), r, (255, 0, 0), 2)
@@ -399,44 +401,31 @@ def mix_and_make_iterable(optimization_params, default_values):
     return output_dict
 
 
-def do_parameter_optimization(input_image, init_params=None, max_num_of_circles=200,optimization_params=None,
-                              fine_tuning_params=False, debug=False, plot_images=False):
+def do_parameter_optimization(input_image, init_params=None, max_num_of_circles=200,
+                              search_step=1, debug=False, plot_images=False):
     input_image = deepcopy(input_image)
 
     init_preprocess_params = init_params['pp']
     init_circle_finding_params = init_params['cf']
     init_clustering_params = init_params['cl']
 
-    if fine_tuning_params:
-        optimization_params = {
-            'pp': {
-                'blur_kernel_size': [init_preprocess_params['blur_kernel_size'] + x for x in [-2,0,2]],
-                'contrast_thr': [init_preprocess_params['contrast_thr'] + x for x in [-50, 0, 50]],
-                'canny_edge_thr1': [init_preprocess_params['canny_edge_thr1'] + x for x in [-10, 0, 10]],
-                'canny_edge_thr2': [init_preprocess_params['canny_edge_thr2'] + x for x in [-10, 0, 10]],
-            },
-            'cf': {
-                'dp': [init_circle_finding_params['dp'] + x for x in [-0.1, 0, 0.1]],
-                'param1': [init_circle_finding_params['param1'] + x for x in [-10, -5, 0, 5, 10]],
-                'param2': [init_circle_finding_params['param2'] + x for x in [-10, -5, 0, 5, 10]],
-            }
-        }
-    else:
-        if not optimization_params:
-            optimization_params = {
-                'pp': {
-                    'blur_kernel_size': [1,5,9,15,21],
-                    'contrast_thr': [500,700,900],
-                    'canny_edge_thr1': [10,30,50,70,90],
-                    'canny_edge_thr2': [10,30,50,70,90],
-                },
-                'cf': {
-                    'dp': [0.7, 0.9, 1.1, 2, 5, 10],
-                    'param1': [10, 30, 50, 70, 90],
-                    'param2': [10, 30, 50, 70, 90],
-                }
-        }
+    c = search_step
 
+    optimization_params = {
+        'pp': {
+            'blur_kernel_size': [init_preprocess_params['blur_kernel_size'] + x for x in [-9//c, 0, 9//c]],
+            'contrast_thr': [init_preprocess_params['contrast_thr'] + x for x in [-100//c, 0, 100//c]],
+            'canny_edge_thr1': [init_preprocess_params['canny_edge_thr1'] + x for x in [-20//c, 0, 20//c]],
+            'canny_edge_thr2': [init_preprocess_params['canny_edge_thr2'] + x for x in [-20//c, 0, 20//c]],
+        },
+        'cf': {
+            'dp': [init_circle_finding_params['dp'] + x for x in [-0.3//c, 0, 0.3//c]],
+            'param1': [init_circle_finding_params['param1'] + x for x in [-15//c, 0, 15//c]],
+            'param2': [init_circle_finding_params['param2'] + x for x in [-15//c, 0, 15//c]],
+        }
+    }
+
+    # todo: clean up here ...
     pp_combos = list(itertools.product(*optimization_params['pp'].values()))
     cf_combos = list(itertools.product(*optimization_params['cf'].values()))
     total_steps = len(pp_combos) * len(cf_combos)
@@ -577,9 +566,13 @@ def distance_metric(circle1, circle2, params):
     return cost
 
 
-def DBSCAN_clustering(sorted_circles, input_image, params={}, plot_images=False,
+def DBSCAN_clustering(sorted_circles, input_image, params=None, plot_images=False,
                       debug=False, debug_clusters_ids=None, fig_size=None, return_colored_img_too=False):
-    debug_report(f'\nrunning "DBSCAN_clustering"', debug)
+
+    debug_report(f'\n** running "DBSCAN_clustering"', debug)
+
+    if params is None:
+        params = {}
 
     if not debug_clusters_ids:
         debug_clusters_ids=[]
@@ -839,3 +832,95 @@ def optimized_spots_coords(input_image, coords_list, fg_inc_pixels=1, search_vec
     new_coords_list = deepcopy(best_coords_for_spots)
     debug_report(f"""new_coords_list={new_coords_list}""", debug)
     return new_coords_list, highest_intensities_per_spot
+
+
+#%%
+def optimize_the_params(file_name,  how_many_times=1, input_image=None,
+                        max_num_of_circles=200, plot_images=False, debug=False,):
+
+    scan_data = ScanDataObj.get_scan_data(file_name=file_name)
+    if not input_image:
+        input_image = ScanDataObj.get_image_from_dict(file_name=file_name, dict_key='file_image')
+
+    new_params = {}
+    working_params = {
+        'pp': scan_data.preprocess_params,
+        'cf': scan_data.circle_finding_params_hough,
+        'cl': scan_data.clustering_params_DBSCAN
+    }
+    search_step = 1
+
+    for t in range(how_many_times):
+        search_step *= (t+1)
+        new_params = do_parameter_optimization(
+            input_image=input_image,
+            debug=debug, plot_images=plot_images,
+            max_num_of_circles=max_num_of_circles,
+            search_step=search_step,
+            init_params=working_params,
+        )
+        working_params = deepcopy(new_params)
+
+    for k, v in new_params.items():
+        print(f'Updated params to this:\nkey: {k}\n{v}\n')
+    return new_params
+
+
+#%%
+def test_current_parameters(input_image, file_name, fig_size=None, debug=False):
+    if fig_size is None:
+        fig_size = [10,10]
+
+    scan_data = ScanDataObj.get_scan_data(file_name=file_name)
+    test_sorted_circles = circle_detection(
+        input_image=input_image,
+        detection_params=scan_data.circle_finding_params_hough,
+        preprocess_params=scan_data.preprocess_params,
+        debug=debug,
+        plot_images=False
+    )
+    if debug:
+        show_circles_on_plot(input_image, fig_size=fig_size, circles_vec=test_sorted_circles, debug=debug)
+
+    test_predicted_clusters_ids = DBSCAN_clustering(
+        sorted_circles=test_sorted_circles,
+        input_image=input_image,
+        params=scan_data.clustering_params_DBSCAN,
+        plot_images=True,
+        debug=debug,
+        debug_clusters_ids=[],
+        fig_size=fig_size,
+    )
+    return
+
+
+
+#%%
+def do_initial_circle_finding(file_name, debug=False, plot_images=False):
+    scan_data = ScanDataObj.get_scan_data(file_name=file_name)
+    image = ScanDataObj.get_image_from_dict(file_name=file_name, dict_key='file_image')
+    scaled_image = ScanDataObj.get_image_from_dict(file_name=file_name, dict_key='file_scaled_image')
+
+    print('doing the circle finding...', end=' ')
+    sorted_circles = circle_detection(
+        image,
+        detection_params=scan_data.circle_finding_params_hough,
+        preprocess_params=scan_data.preprocess_params,
+        debug=debug,
+        plot_images=plot_images
+    )
+    print('Done!')
+
+    print('doing the clustering...', end=' ')
+    predicted_clusters_ids = DBSCAN_clustering(
+        sorted_circles=sorted_circles,
+        input_image=scaled_image,
+        params=scan_data.clustering_params_DBSCAN,
+        plot_images=plot_images,
+        debug=debug,
+    )
+    print('Done!')
+    return sorted_circles, predicted_clusters_ids
+
+
+

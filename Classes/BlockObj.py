@@ -85,19 +85,26 @@ class Block:
         debug_report(f'in the beginning x: {(self.start_x, self.end_x)}, y: {(self.start_y, self.end_y)}', debug)
 
         if scan_size == 10 and block_ncol == 3:
-            self.start_x = int(max(10, (block_size + 150 + block_distance_adjustment[0]) * self.col_number))
-            self.start_y = int(max(100, (block_size + 250 + block_distance_adjustment[1]) * self.row_number))
+            distance = [150,100]
+            offset = [10,100]
 
-        if scan_size == 5 and block_ncol == 3:
-            self.start_x = int((block_size + 660 + block_distance_adjustment[0]) * self.col_number + 100)
-            self.start_y = int((block_size + 890 + block_distance_adjustment[1]) * self.row_number + 400)
+        elif scan_size == 5 and block_ncol == 3:
+            distance = [660,890]
+            offset = [100,400]
 
-        if scan_size == 5 and block_ncol == 4:
-            self.start_x = int((block_size + 200 + block_distance_adjustment[0]) * self.col_number + 400)
-            self.start_y = int((block_size + 200 + block_distance_adjustment[1]) * self.row_number + 40)
+        elif scan_size == 5 and block_ncol == 4:
+            distance = [90,45]
+            offset = [300, 40]
+        else:
+            distance = [0,0]
+            offset = [0,0]
 
-        self.start_x += init_offset[0]
-        self.start_y += init_offset[1]
+        block_distance = [x + y for x, y in zip(distance, block_distance_adjustment)]
+        first_block_offset = [x + y for x, y in zip(offset, init_offset)]
+
+        self.start_x = int(self.col_number*(block_size+block_distance[0]) + first_block_offset[0])
+        self.start_y = int(self.row_number*(block_size+block_distance[1]) + first_block_offset[1])
+
         self.end_x = self.start_x + int(block_size + block_size_adjustment[0])
         self.end_y = self.start_y + int(block_size + block_size_adjustment[1])
         debug_report(f'in the end x: {(self.start_x, self.end_x)}, y: {(self.start_y, self.end_y)}', debug)
@@ -162,9 +169,7 @@ class Block:
                 return
         scan_size = ScanDataObj.get_scan_data(self.file_name).scan_size
         block_size = ScanDataObj.get_scan_data(self.file_name).block_size
-        extra_padding = 180
-        if scan_size == 10:
-            extra_padding = 150
+        extra_padding = block_size//75 #checkme: this only works for SD4 (size=5)
         debug_report(f'extra_padding={extra_padding}', debug)
 
         #checkme
