@@ -165,8 +165,7 @@ class Cluster:
     # C2
     def add_spots_coords_in_block(self, debug=False):
         debug_report(f'** C2: running add_spots_coords_in_block for cluster{self.cluster_id}', debug)
-
-        debug_report(f"before anything: {self.full_report(debug)}", debug)
+        debug_report(f"before anything: {self.full_report(return_str=debug)}", debug)
 
         self.spots_coords_in_block_list = []
         for x, y, r in self.spots_coords_list: # loop over all spots in these cluster
@@ -738,7 +737,7 @@ class Cluster:
 
         other_cluster = data_obj.get_cluster(other_cluster_id)
         debug_report(
-            f'self cluster is: {self.full_report(debug=debug)}\nother cluster is {other_cluster.full_report(debug=debug)}', debug)
+            f'self cluster is: {self.full_report(return_str=debug)}\nother cluster is {other_cluster.full_report(return_str=debug)}', debug)
         debug_report(f'offset={offsets_vec}\ndistance_thr={distance_thr}', debug)
 
         other_c_coords_list = [coord + np.array(offsets_vec) for coord in other_cluster.spots_coords_in_block_list]
@@ -808,8 +807,8 @@ class Cluster:
 
 
 
-    def full_report(self,debug=False):
-        if not debug:
+    def full_report(self, return_str=None):
+        if return_str in [False, 0]:
             return
         skip_attrs = ['file_name','mean_fg_list','mean_bg_list','signal_list','clean_signal_list',
                      'short_clean_signal_list','mean_cluster_signal','color','position_ind','name']
@@ -827,5 +826,7 @@ class Cluster:
                 # output += f'Complete list of {attr}: {value}\n'
             else:
                 output += f'\t{attr}: {value}'
-        # print(output)
-        return output
+        if return_str in [True, 1]:
+            return output
+        else:
+            print(return_str)

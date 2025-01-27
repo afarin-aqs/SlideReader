@@ -7,7 +7,7 @@ class ScanData:
             backup_blocks_dict=None, preprocess_params=None, circle_finding_params_hough=None,
             clustering_params_DBSCAN=None, cAb_names=None, avg_spot_r=20, avg_spot_distance=25, 
             default_assay='SD4', default_scan_size=5, default_block_ncol=4, default_block_nrow=16,
-            default_block_size=850,
+            default_block_size=800, predicted_clusters_ids=None, sorted_circles=None
     ):
         self.file_name = file_name
         self.assay = default_assay
@@ -27,15 +27,19 @@ class ScanData:
             self.backup_blocks_dict = {}
         if not cAb_names:
             self.cAb_names = []
+        if not predicted_clusters_ids:
+            self.predicted_clusters_ids = []
+        if not sorted_circles:
+            self.sorted_circles = []
         if not preprocess_params:
-            preprocess_params = {
+            self.preprocess_params = {
                 'blur_kernel_size': 19,
                 'contrast_thr': 650,
                 'canny_edge_thr1': 100,
                 'canny_edge_thr2': 10
             }
         if not circle_finding_params_hough:
-            circle_finding_params_hough = {
+            self.circle_finding_params_hough = {
                 'method_name': 'Hough',
                 'dp': 1.1,
                 'minDist': 40,
@@ -45,16 +49,13 @@ class ScanData:
                 'maxRadius': 22,
             }
         if not clustering_params_DBSCAN:
-            clustering_params_DBSCAN = {
+            self.clustering_params_DBSCAN = {
                 'eps': 1200,  # lower means harder
                 'min_samples': 4,
                 'x_power': 3,
                 'y_power': 7,
                 # 'extra_y_cost': True
             }
-        self.circle_finding_params_hough = circle_finding_params_hough
-        self.clustering_params_DBSCAN = clustering_params_DBSCAN
-        self.preprocess_params = preprocess_params
 
     def get_clusters_dict(self):
         return self.clusters_dict
@@ -91,7 +92,7 @@ class ScanData:
             if self.scan_size == 10:
                 self.block_size = 400
             elif self.scan_size == 5:
-                self.block_size = 850
+                self.block_size = 800
         else:
             print(f'assay cannot be {self.assay}! -> either OF or SD4')
         if debug:

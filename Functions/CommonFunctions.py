@@ -910,6 +910,7 @@ def do_initial_circle_finding(file_name, debug=False, plot_images=False):
         plot_images=plot_images
     )
     print('Done!')
+    scan_data.sorted_circles = sorted_circles
 
     print('doing the clustering...', end=' ')
     predicted_clusters_ids = DBSCAN_clustering(
@@ -920,7 +921,9 @@ def do_initial_circle_finding(file_name, debug=False, plot_images=False):
         debug=debug,
     )
     print('Done!')
-    return sorted_circles, predicted_clusters_ids
+
+    scan_data.predicted_clusters_ids = predicted_clusters_ids
+    return
 
 
 

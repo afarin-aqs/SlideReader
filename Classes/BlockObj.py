@@ -167,9 +167,9 @@ class Block:
         for k, v in self.min_max_coords_of_clusters.items():
             if v is None:
                 return
-        scan_size = ScanDataObj.get_scan_data(self.file_name).scan_size
+        # scan_size = ScanDataObj.get_scan_data(self.file_name).scan_size
         block_size = ScanDataObj.get_scan_data(self.file_name).block_size
-        extra_padding = block_size//75 #checkme: this only works for SD4 (size=5)
+        extra_padding = block_size//7 #checkme: this works for SD4 (size=5) -- need to check others...
         debug_report(f'extra_padding={extra_padding}', debug)
 
         #checkme
@@ -203,13 +203,13 @@ class Block:
         for cluster_id in self.clusters_ids_list:
             cluster = data_obj.get_cluster(cluster_id)
             if debug:
-                cluster.full_report(debug=debug)
+                cluster.full_report(return_str=debug)
             debug_report(f'Cluster{cluster_id} -> Before: spots_coords_in_block_list={cluster.spots_coords_in_block_list}', debug)
             cluster.add_block_info(block_id=self.block_id,debug=debug)
             cluster.add_spots_coords_in_block(debug=debug)
             debug_report(f'Cluster{cluster_id} -> After: spots_coords_in_block_list={cluster.spots_coords_in_block_list}', debug)
         # self.add_cropped_images(debug=debug,plot_images=debug)
-        debug_report(f'{self.full_report((debug))}', debug)
+        debug_report(f'{self.full_report(debug)}', debug)
         self.update_min_max_coords_of_clusters()
         self.add_cropped_images()
 
@@ -486,9 +486,7 @@ start x,y: {(self.start_x, self.start_y)}, backup start x,y: {(self.backup_start
         debug_report(f'starting mask (original image) size = {original_size[::-1]}', debug)
         mask = np.zeros(original_size)
 
-        # Finding min and max values of (x,y) to find the corners of the mask:
-        # min_x, max_x, min_y, max_y = None, None, None, None
-
+        # Finding min and max values of clusters (x,y) to find the corners of the mask:
         for cluster_id in self.clusters_ids_list:
             cluster = data_obj.get_cluster(cluster_id)
             coords_list = cluster.spots_coords_in_block_list
@@ -497,10 +495,7 @@ start x,y: {(self.start_x, self.start_y)}, backup start x,y: {(self.backup_start
         #             [min_x, max_x, min_y, max_y] = self.update_min_max_coords_of_clusters(self, coords_list, debug)
 
         mask = mask.astype(np.uint8)
-        if scan_size == 10:
-            margin = 50
-        elif scan_size == 5:
-            margin = int(data_obj.avg_spot_r*2)
+        margin = int(3*data_obj.avg_spot_r) #checkme:
         debug_report(
             f'after the loop, mask is {mask.shape}, min_max_coords_of_clusters={self.min_max_coords_of_clusters}, start (x,y)={(self.start_x, self.start_y)} and margin = {margin}',
             debug)
@@ -572,7 +567,7 @@ start x,y: {(self.start_x, self.start_y)}, backup start x,y: {(self.backup_start
             debug_clusters = []
 
         data_obj = ScanDataObj.get_scan_data(self.file_name)
-        debug_report(self.full_report(debug=debug), debug)
+        debug_report(self.full_report(return_str=debug), debug)
 
         these_are_matched_already = []
         for ref_cluster_id in self.clusters_ids_list:
@@ -583,7 +578,7 @@ start x,y: {(self.start_x, self.start_y)}, backup start x,y: {(self.backup_start
                 continue
 
             ref_cluster = data_obj.get_cluster(ref_cluster_id)
-            debug_report(f'ref_cluster: {ref_cluster.full_report(debug=debug_cluster_r)}', debug_cluster_r)
+            debug_report(f'ref_cluster: {ref_cluster.full_report(return_str=debug_cluster_r)}', debug_cluster_r)
 
             for second_cluster_id in self.clusters_ids_list:
                 debug_cluster_s = True if debug or debug_cluster_r or second_cluster_id in debug_clusters else False
@@ -595,7 +590,7 @@ start x,y: {(self.start_x, self.start_y)}, backup start x,y: {(self.backup_start
                     continue
 
                 second_cluster = data_obj.get_cluster(second_cluster_id)
-                debug_report(f'second_cluster: {second_cluster.full_report(debug=debug_cluster_s)}', debug_cluster_s)
+                debug_report(f'second_cluster: {second_cluster.full_report(return_str=debug_cluster_s)}', debug_cluster_s)
 
                 avg_x_dist = np.abs(ref_cluster.avg_x_in_block - second_cluster.avg_x_in_block + offsets_vec[0])
                 avg_y_dist = np.abs(ref_cluster.avg_y_in_block - second_cluster.avg_y_in_block + offsets_vec[1])
@@ -622,8 +617,8 @@ start x,y: {(self.start_x, self.start_y)}, backup start x,y: {(self.backup_start
 
         debug_report(f"[After] block{self.block_id}.clusters_ids_list: {self.clusters_ids_list}", debug)
 
-    def full_report(self, debug=False):
-        if not debug:
+    def full_report(self, return_str=None):
+        if return_str in [False, 0]:
             return
         skip_attr = ['file_name','row_number','col_number','Ag_conc','cAb_names','dAb_map_key','dAb_label',
                      'target','results_counts','fg_bg_calculated_flag','intensities_dict_list']
@@ -631,12 +626,15 @@ start x,y: {(self.start_x, self.start_y)}, backup start x,y: {(self.backup_start
         for attr, value in self.__dict__.items():
             if attr not in skip_attr:
                 output += f'\t{attr}: {value}\n'
-        # print(output)
+
         data_obj = ScanDataObj.get_scan_data(self.file_name)
         for cid in self.clusters_ids_list:
             c = data_obj.get_cluster(cid)
-            output += c.full_report(debug=debug)
-        return output
+            output += c.full_report(return_str=return_str)
+        if return_str in [True, 1]:
+            return output
+        else:
+            print(output)
 
     # B13
     def find_exact_match_move(self, template_block, acceptable_distance=None,
@@ -931,7 +929,7 @@ start x,y: {(self.start_x, self.start_y)}, backup start x,y: {(self.backup_start
         data_obj = ScanDataObj.get_scan_data(file_name=self.file_name)
         template_block = data_obj.get_block(template_block_id)
         debug_report(f'move_match={move_match} and preprocess_params={preprocess_params}', debug)
-        debug_report(f'this is the template_block:{template_block.full_report(debug=debug)}', debug)
+        debug_report(f'this is the template_block:{template_block.full_report(return_str=debug)}', debug)
 
         move_results = self.move_block_based_on_template_mask(
             template_block_id,
@@ -1180,13 +1178,13 @@ start x,y: {(self.start_x, self.start_y)}, backup start x,y: {(self.backup_start
         debug_report(f'before image is {before.shape} and after image is {after.shape}', debug)
         for cluster_id in self.clusters_ids_list:
             cluster = data_obj.get_cluster(cluster_id)
-            debug_report(f'this is the current cluster: {cluster.full_report(debug=debug)}', debug)
+            debug_report(f'this is the current cluster: {cluster.full_report(return_str=debug)}', debug)
 
             debug_report(f'plotting cluster{cluster_id} on the "after" image, with coords: {cluster.spots_coords_list}',
                          debug)
             cluster.plot_cluster_on_image(after, debug=debug, size=4)
             original_cluster = data_obj.get_cluster_backup(cluster_id)
-            debug_report(f'this is the backup cluster: {original_cluster.full_report(debug=debug)}', debug)
+            debug_report(f'this is the backup cluster: {original_cluster.full_report(return_str=debug)}', debug)
 
             if original_cluster:
                 debug_report(

@@ -79,7 +79,6 @@ def init_clusters_dict(circles_coords, predicted_clusters_ids, file_name,
     data_obj = ScanDataObj.get_scan_data(file_name)
     data_obj.reset_clusters_dict()
     count = -1
-    next_cluster_id = None
     last_cluster_id = len(sorted_clusters_ids) - 1
     new_cluster = True
     skip_custer = None
@@ -409,7 +408,7 @@ def restore_cluster_from_backup(file_name, cluster_id, debug=False):
     debug_report(f'Restoring cluster {cluster_id} from backup_clusters_dict', debug)
     data_obj = ScanDataObj.get_scan_data(file_name=file_name)
     restored_cluster = data_obj.get_cluster_backup(cluster_id=cluster_id)
-    debug_report(f'this is the restored version: {restored_cluster.full_report(debug=debug)}', debug)
+    debug_report(f'this is the restored version: {restored_cluster.full_report(return_str=debug)}', debug)
     data_obj.add_new_cluster_to_dict(restored_cluster)
 
 
@@ -519,7 +518,7 @@ def edit_multiple_blocks(block_ids_list, file_name, manual_spot_edit_dict=None, 
     for block_id in block_ids_list:
         debug_block = True if block_id in debug_blocks else debug
         block = data_obj.get_block(block_id)
-        debug_report(f'in the beginning: {block.full_report(debug=debug_block)}', debug_block)
+        debug_report(f'in the beginning: {block.full_report(return_str=debug_block)}', debug_block)
 
         if overwrite:
             block.dont_touch_this_block = False
@@ -589,7 +588,7 @@ def edit_multiple_blocks(block_ids_list, file_name, manual_spot_edit_dict=None, 
             picture[block_id] = block.plot_block(plot_images=False, label=block_id, with_border=False,
                                                  fig_size=300, crop_to_mask=True, debug=debug_block)
 
-        debug_report(f'at the end: {block.full_report(debug=debug)}', debug_block)
+        debug_report(f'at the end: {block.full_report(return_str=debug)}', debug_block)
     if plot_final_results:
         do_final_results_plot(file_name=file_name, block_ids_list=block_ids_list, picture=picture, debug=debug, fig_size=fig_size)
 #         else:
