@@ -124,6 +124,8 @@ class ScanData:
         if cluster_id in self.backup_clusters_dict:
             return self.backup_clusters_dict[cluster_id]
         print(f'{text}: cluster {cluster_id} does not exist, even in backup clusters dictionary!!')
+        return None
+
 
 
     def get_block(self, block_id: str):
@@ -193,8 +195,9 @@ def init_or_reset_params(reset=False, file_name=None, input_param_dict=None, deb
 
     if scan_data is None:
         scan_data = create_new_scan_data(file_name=file_name, debug=debug)
+        print('create a new scan data.')
 
-    if input_param_dict is None:
+    if input_param_dict is None or reset:
         input_param_dict = {} #anything not given as input, will be set as its default value
 
     key_name_correction = {
@@ -202,15 +205,21 @@ def init_or_reset_params(reset=False, file_name=None, input_param_dict=None, deb
         'circle_finding_params_hough': ['cf','hough_circle_finding_params', 'circle_finding_params','hough_params'],
         'clustering_params_DBSCAN': ['cl','clustering_params', 'DBSCAN_clustering_params','DBSCAN_params'],
     }
+
     for right_key, list_of_possible_names in key_name_correction.items():
         for wrong_key in list_of_possible_names:
             if wrong_key in input_param_dict.keys():
                 input_param_dict[right_key] = input_param_dict.pop(wrong_key)
+                print(f'change wrong_key {wrong_key} to right_key {right_key}')
+            if wrong_key in scan_data.__dict__.keys():
+                input_param_dict[right_key] = scan_data.__dict__[wrong_key]
+                print(f'change wrong_key {wrong_key} to right_key {right_key}')
+
 
     scan_data.set_new_params(input_param_dict,debug=debug)
     scan_data.set_assay_scan_size_dependent_params(debug=debug)
     update_scan_data_dict(scan_data)
-    print(f'Successfully set the params for {file_name} :)')
+    print(f'Successfully set the params for {file_name}')
     return
 
 

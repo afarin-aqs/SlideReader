@@ -173,7 +173,7 @@ class Cluster:
 
         self.avg_x_in_block = int(np.mean([arr[0] for arr in self.spots_coords_in_block_list]))
         self.avg_y_in_block = int(np.mean([arr[1] for arr in self.spots_coords_in_block_list]))
-        # self.add_position_ind(debug=debug)
+        self.add_position_ind(debug=debug)
         debug_report(f"in the end: {self.full_report(debug)}", debug)
 
 

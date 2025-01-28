@@ -177,7 +177,7 @@ def final_edits_after_adding_clusters_to_block(file_name, block_id, debug=False,
 
     block.cAb_names = data_obj.cAb_names
     block.update_min_max_coords_of_clusters(debug=debug) # this is the first time min_max values are defined
-    block.update_block_start_end_from_clusters_min_max(debug=debug) # first time this is called & no backup is saved
+    # block.update_block_start_end_from_clusters_min_max(debug=debug) # first time this is called & no backup is saved
     block.add_cropped_images(debug=debug, plot_images=plot_images)
     block.save_backup(debug=debug)
     data_obj.add_new_block_to_dict(block=block)
@@ -194,6 +194,8 @@ def final_edits_after_adding_clusters_to_block(file_name, block_id, debug=False,
         cluster = data_obj.get_cluster(cluster_id)
         if debug:
             print(cluster.__dict__)
+        if cluster is None:
+            continue
 
         cluster.name = data_obj.cAb_names[counter]
         cluster.add_block_info(block_id=block_id, debug=debug)
@@ -496,7 +498,7 @@ def give_block_ids_from_r_c(row_vec=range(16), col_vec=[0, 1, 2, 3], debug=False
 def edit_multiple_blocks(block_ids_list, file_name, manual_spot_edit_dict=None, init_template_id='r0c0',
                          debug=False, plot_before_after=False, plot_mask=False, plot_final_results=True,
                          move_whole_block_match=None, preprocess_params=None, overwrite=True, debug_blocks=None,
-                         redo_circle_finding_for_blocks_or_clusters=None, acceptable_distance=None,
+                         redo_circle_finding_for_blocks_or_clusters=None, restore_block_coords=None,
                          correct_N=None, debug_clusters=None, fig_size=None):
     debug_report(f'** Running edit_multiple_blocks funtion, and init_template_id={init_template_id}', debug)
     if not block_ids_list:
@@ -511,6 +513,8 @@ def edit_multiple_blocks(block_ids_list, file_name, manual_spot_edit_dict=None, 
         debug_clusters = []
     if not redo_circle_finding_for_blocks_or_clusters:
         redo_circle_finding_for_blocks_or_clusters = []
+    if not restore_block_coords:
+        restore_block_coords = []
 
     data_obj = ScanDataObj.get_scan_data(file_name=file_name)
 
@@ -523,6 +527,8 @@ def edit_multiple_blocks(block_ids_list, file_name, manual_spot_edit_dict=None, 
         if overwrite:
             block.dont_touch_this_block = False
 
+        if block_id in restore_block_coords:
+            block.reset_block_start_end_coords(debug=debug_block)
         if block_id in redo_circle_finding_for_blocks_or_clusters or any(c_id in redo_circle_finding_for_blocks_or_clusters for c_id in block.clusters_ids_list) :
             block.redo_circle_finding(target_list=redo_circle_finding_for_blocks_or_clusters, debug=debug_block)
 
