@@ -17,8 +17,7 @@ from Functions.CommonFunctions import debug_report
 
 
 #%% First, init Blocks:
-def create_new_block(file_name, block_id, init_offset=None, block_size_adjustment=None,
-                     block_distance_adjustment=None, debug=False):
+def create_new_block(file_name, block_id, init_offset=None, block_distance_adjustment=None, debug=False):
     debug_report(f'** running "create_new_block" for block{block_id}', debug)
     str_row_number, str_col_number = re.findall(r'\d+', block_id)
     block = BlockObj.Block(
@@ -28,15 +27,14 @@ def create_new_block(file_name, block_id, init_offset=None, block_size_adjustmen
         row_number=int(str_row_number)
     )
     block.set_start_and_end_of_block(init_offset=init_offset,  debug=debug,
-                                     block_distance_adjustment=block_distance_adjustment,
-                                     block_size_adjustment=block_size_adjustment)
+                                     block_distance_adjustment=block_distance_adjustment,)
     block.add_cropped_images(debug=debug)
     block.save_backup(debug=debug) # block level backup
     debug_report(f'created the new block {block.block_id}', debug=debug)
     return block
 
 
-def init_blocks_dict(file_name, init_offset=None, block_size_adjustment=None, debug_block_ids=None,
+def init_blocks_dict(file_name, init_offset=None, block_size_adjustment=0, debug_block_ids=None,
                      block_distance_adjustment=None, debug=False, plot_blocks=False):
     debug_report(f'** running "init_blocks_dict"', debug)
     if debug_block_ids is None:
@@ -44,14 +42,16 @@ def init_blocks_dict(file_name, init_offset=None, block_size_adjustment=None, de
 
     data_obj = ScanDataObj.get_scan_data(file_name)
     data_obj.reset_blocks_dict()
-
+    data_obj.block_size += int(block_size_adjustment)
+    if block_distance_adjustment is None:
+        block_distance_adjustment = [0,0]
+    block_distance_adjustment = [x - block_size_adjustment for x in block_distance_adjustment]
     for r_number in range(data_obj.block_nrow):
         for c_number in range(data_obj.block_ncol):
             block_id = f"r{r_number}c{c_number}"
             debug_block = True if debug or block_id in debug_block_ids else False
             block = create_new_block(file_name=file_name, block_id=block_id, debug=debug_block,
-                                     init_offset=init_offset, block_distance_adjustment=block_distance_adjustment,
-                                     block_size_adjustment=block_size_adjustment)
+                                     init_offset=init_offset, block_distance_adjustment=block_distance_adjustment)
             if plot_blocks and debug_block:
                 block.plot_block(debug=debug_block, fig_size=[5,5])
             data_obj.add_new_block_to_dict(block)
@@ -175,6 +175,10 @@ def final_edits_after_adding_clusters_to_block(file_name, block_id, debug=False,
     if debug:
         print('\nAt first: ',block.__dict__)
 
+    if not block.clusters_ids_list:
+        for cluster in data_obj.get_clusters_dict().values():
+            if cluster.block_id == block_id:
+                block.add_cluster_related_info(cluster_id=cluster.cluster_id)
     block.cAb_names = data_obj.cAb_names
     block.update_min_max_coords_of_clusters(debug=debug) # this is the first time min_max values are defined
     # block.update_block_start_end_from_clusters_min_max(debug=debug) # first time this is called & no backup is saved
@@ -499,8 +503,9 @@ def edit_multiple_blocks(block_ids_list, file_name, manual_spot_edit_dict=None, 
                          debug=False, plot_before_after=False, plot_mask=False, plot_final_results=True,
                          move_whole_block_match=None, preprocess_params=None, overwrite=True, debug_blocks=None,
                          redo_circle_finding_for_blocks_or_clusters=None, restore_block_coords=None,
-                         correct_N=None, debug_clusters=None, fig_size=None):
+                         correct_N=None, debug_clusters=None, fig_size=None, crop_to_mask=True):
     debug_report(f'** Running edit_multiple_blocks funtion, and init_template_id={init_template_id}', debug)
+    # crop_to_mask=False
     if not block_ids_list:
         return
     if debug_blocks is None:
@@ -535,7 +540,7 @@ def edit_multiple_blocks(block_ids_list, file_name, manual_spot_edit_dict=None, 
         if block_id == init_template_id or block.dont_touch_this_block:
             debug_report(f"will not be editing block{block_id}...", debug_block)
             pic = block.plot_block(plot_images=False, label=block_id, debug=debug_block,
-                                   with_border=False, fig_size=[5, 5], crop_to_mask=True)
+                                   with_border=False, fig_size=[5, 5], crop_to_mask=crop_to_mask)
             picture[block_id] = pic
             debug_report(f"added its pic {pic.shape} pictures dict:", debug_block)
             if debug:
@@ -592,11 +597,12 @@ def edit_multiple_blocks(block_ids_list, file_name, manual_spot_edit_dict=None, 
         block_mask = block.create_block_mask(debug=debug_block, plot_images=plot_mask)
         if plot_final_results:
             picture[block_id] = block.plot_block(plot_images=False, label=block_id, with_border=False,
-                                                 fig_size=300, crop_to_mask=True, debug=debug_block)
+                                                 fig_size=300, crop_to_mask=crop_to_mask, debug=debug_block)
 
         debug_report(f'at the end: {block.full_report(return_str=debug)}', debug_block)
     if plot_final_results:
-        do_final_results_plot(file_name=file_name, block_ids_list=block_ids_list, picture=picture, debug=debug, fig_size=fig_size)
+        do_final_results_plot(file_name=file_name, block_ids_list=block_ids_list, picture=picture, debug=debug,
+                              fig_size=fig_size, crop_to_mask=crop_to_mask)
 #         else:
 #             for pic in picture:
 #                 CommonFunctions.display_in_console(pic, max_size=300)
@@ -612,7 +618,7 @@ def edit_multiple_blocks(block_ids_list, file_name, manual_spot_edit_dict=None, 
 #     save_current_data_obj(path=path)
 
 
-def do_final_results_plot(file_name, block_ids_list, picture=None, debug=False, do_plot=True, fig_size=None):
+def do_final_results_plot(file_name, block_ids_list, picture=None, debug=False, do_plot=True, fig_size=None, crop_to_mask=True):
     if not do_plot:
         return
     block_ncol = ScanDataObj.get_scan_data(file_name).block_ncol
@@ -623,7 +629,7 @@ def do_final_results_plot(file_name, block_ids_list, picture=None, debug=False, 
         for block_id in block_ids_list:
             block = data_obj.get_block(block_id)
             picture[block_id] = block.plot_block(plot_images=0, label=block_id, with_border=0,
-                                                 fig_size=300, crop_to_mask=1, debug=debug)
+                                                 fig_size=300, crop_to_mask=crop_to_mask, debug=debug)
 
     for i in range(int(len(block_ids_list) / block_ncol)):
         p1 = picture[block_ids_list[block_ncol * i]]

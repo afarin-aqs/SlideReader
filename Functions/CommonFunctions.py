@@ -380,7 +380,7 @@ def how_many_cluster_circles_is_here(input_image, preprocess_params, clustering_
     predicted_clusters_ids, colored_image = DBSCAN_clustering(
         found_circles, input_image,params=clustering_params, return_colored_img_too=True
     )
-    found_cluster_circles_counts = len([x for x in predicted_clusters_ids if x != -1])
+    found_cluster_circles_counts = len([x for x in predicted_clusters_ids if x != -1]) * len({x for x in predicted_clusters_ids if x != -1})
     return found_cluster_circles_counts, colored_image
 
 
@@ -409,22 +409,24 @@ def do_parameter_optimization(input_image, init_params=None, max_num_of_circles=
     init_circle_finding_params = init_params['cf']
     init_clustering_params = init_params['cl']
 
+    debug_report(f'init_params={init_params}',debug)
     c = search_step
 
     optimization_params = {
         'pp': {
-            'blur_kernel_size': [init_preprocess_params['blur_kernel_size'] + x for x in [-9//c, 0, 9//c]],
-            'contrast_thr': [init_preprocess_params['contrast_thr'] + x for x in [-100//c, 0, 100//c]],
-            'canny_edge_thr1': [init_preprocess_params['canny_edge_thr1'] + x for x in [-20//c, 0, 20//c]],
-            'canny_edge_thr2': [init_preprocess_params['canny_edge_thr2'] + x for x in [-20//c, 0, 20//c]],
+            'blur_kernel_size': [max(1,init_preprocess_params['blur_kernel_size'] + x + (0 if (init_preprocess_params['blur_kernel_size'] + x) % 2 == 1 else 1)) for x in [-9//c, 0, 9//c]],
+            'contrast_thr': [max(1,init_preprocess_params['contrast_thr'] + x) for x in [-100//c, 0, 100//c]],
+            'canny_edge_thr1': [max(1,init_preprocess_params['canny_edge_thr1'] + x) for x in [-20//c, 0, 20//c]],
+            'canny_edge_thr2': [max(1,init_preprocess_params['canny_edge_thr2'] + x) for x in [-20//c, 0, 20//c]],
         },
         'cf': {
-            'dp': [init_circle_finding_params['dp'] + x for x in [-0.3//c, 0, 0.3//c]],
-            'param1': [init_circle_finding_params['param1'] + x for x in [-15//c, 0, 15//c]],
-            'param2': [init_circle_finding_params['param2'] + x for x in [-15//c, 0, 15//c]],
+            'dp': [max(1,init_circle_finding_params['dp'] + x) for x in [-0.3//c, 0, 0.3//c]],
+            'param1': [max(1,init_circle_finding_params['param1'] + x) for x in [-15//c, 0, 15//c]],
+            'param2': [max(1,init_circle_finding_params['param2'] + x) for x in [-15//c, 0, 15//c]],
         }
     }
 
+    debug_report(optimization_params,debug)
     # todo: clean up here ...
     pp_combos = list(itertools.product(*optimization_params['pp'].values()))
     cf_combos = list(itertools.product(*optimization_params['cf'].values()))
@@ -432,16 +434,20 @@ def do_parameter_optimization(input_image, init_params=None, max_num_of_circles=
     print(f'pp_combinations are {len(pp_combos)} and cf_combinations are {len(cf_combos)} => total combinations={total_steps}')
     print('Checked Combinations:')
     max_cluster_circles_count = 0
+    max_num_clusters = 0
     best_colored_image = None
     final_optimized_params = {}
     step = 0
     for one_pp in pp_combos:
         for one_cf in cf_combos:
+            debug_report(f'one_pp={one_pp}, one_cf={one_cf}', debug)
             step += 1
             if step % 100 == 0:
                 print(f'{step}', end=', ')
             pp_step_dict = dict(zip(optimization_params['pp'].keys(), one_pp))
             cf_step_dict = dict(zip(optimization_params['cf'].keys(), one_cf))
+
+            debug_report(f'pp_step_dict={pp_step_dict}, cf_step_dict={cf_step_dict}', debug)
             cf_step_dict.update(
                 {k: v for k, v in init_circle_finding_params.items() if k not in optimization_params['cf']})
 
@@ -839,7 +845,7 @@ def optimize_the_params(file_name,  how_many_times=1, input_image=None,
                         max_num_of_circles=200, plot_images=False, debug=False,):
 
     scan_data = ScanDataObj.get_scan_data(file_name=file_name)
-    if not input_image:
+    if input_image is None:
         input_image = ScanDataObj.get_image_from_dict(file_name=file_name, dict_key='file_image')
 
     new_params = {}

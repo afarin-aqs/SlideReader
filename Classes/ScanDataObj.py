@@ -76,6 +76,7 @@ class ScanData:
     def reset_blocks_dict(self):
         self.blocks_dict = {}
         self.backup_blocks_dict = {}
+        self.set_assay_scan_size_dependent_params()
 
 
     def set_assay_scan_size_dependent_params(self, debug=False):
@@ -100,7 +101,15 @@ class ScanData:
 
     def set_new_params(self, new_params_dict,debug=False):
         for key, value in new_params_dict.items():
-            setattr(self, key, value)
+            if hasattr(self, key):
+                setattr(self, key, value)
+            elif key in self.preprocess_params:
+                self.preprocess_params[key] = value
+            elif key in self.circle_finding_params_hough:
+                self.circle_finding_params_hough[key] = value
+            elif key in self.clustering_params_DBSCAN:
+                self.clustering_params_DBSCAN[key] = value
+
         if debug:
             print(self.__dict__)
 
@@ -187,17 +196,21 @@ def update_scan_data_dict(scan_data):
     all_scan_data[scan_data.file_name] = scan_data
 
 
-def init_or_reset_params(reset=False, file_name=None, input_param_dict=None, debug=False):
+def init_or_reset_params(file_name=None, input_param_dict=None, debug=False):
     scan_data = get_scan_data(file_name)
-    if scan_data is not None and not reset:
+    extra_keys = set(input_param_dict.keys()) - {'scan_size', 'assay', 'cAb_names'}
+
+    if scan_data is not None and not extra_keys:
         print(f'Skipping param initiation because they are already loaded from pickle files for {file_name}')
         return
+
+    hasattr(scan_data, 'sorted_circles') or not hasattr(scan_data, 'circle_finding_params_hough')
 
     if scan_data is None:
         scan_data = create_new_scan_data(file_name=file_name, debug=debug)
         print('create a new scan data.')
 
-    if input_param_dict is None or reset:
+    if input_param_dict is None:
         input_param_dict = {} #anything not given as input, will be set as its default value
 
     key_name_correction = {
@@ -219,7 +232,7 @@ def init_or_reset_params(reset=False, file_name=None, input_param_dict=None, deb
     scan_data.set_new_params(input_param_dict,debug=debug)
     scan_data.set_assay_scan_size_dependent_params(debug=debug)
     update_scan_data_dict(scan_data)
-    print(f'Successfully set the params for {file_name}')
+    print(f'Successfully set the params for {file_name} with these given keys: {input_param_dict.keys()}')
     return
 
 

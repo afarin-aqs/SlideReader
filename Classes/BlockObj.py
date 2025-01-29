@@ -64,8 +64,7 @@ class Block:
         self.min_max_coords_of_clusters = min_max_coords_of_clusters
 
 
-    def set_start_and_end_of_block(self, init_offset=None, block_size_adjustment=None,
-                                   block_distance_adjustment=None, debug=False):
+    def set_start_and_end_of_block(self, init_offset=None, block_distance_adjustment=None, debug=False):
         # this function sets start and end coords of a block, for the first time.
         # it would only look at ncol, nrow, and scan size.
         # no backup or image is saved here.
@@ -73,8 +72,6 @@ class Block:
 
         if not init_offset:
             init_offset = [0,0]
-        if not block_size_adjustment:
-            block_size_adjustment = [0,0]
         if not block_distance_adjustment:
             block_distance_adjustment = [0,0]
 
@@ -105,15 +102,15 @@ class Block:
         first_block_offset = [x + y for x, y in zip(offset, init_offset)]
         debug_report(f'Updated: values: distance={distance}, offset={offset}', debug)
 
-        self.start_x = int(self.col_number*(block_size+block_distance[0]) + first_block_offset[0])
-        self.start_y = int(self.row_number*(block_size+block_distance[1]) + first_block_offset[1])
+        self.start_x = max(0,int(self.col_number*(block_size+block_distance[0]) + first_block_offset[0]))
+        self.start_y = max(0,int(self.row_number*(block_size+block_distance[1]) + first_block_offset[1]))
 
         debug_report(f'self.col_number({self.col_number})*(block_size({block_size})+block_distance[0]({block_distance[0]}) + first_block_offset[0]({first_block_offset[0]}) = self.start_x({self.start_x})', debug)
         debug_report(f'self.row_number({self.row_number})*(block_size({block_size})+block_distance[1]({block_distance[1]}) + first_block_offset[1]({first_block_offset[1]}) = self.start_y ({self.start_y})', debug)
-        self.end_x = self.start_x + int(block_size + block_size_adjustment[1])
-        self.end_y = self.start_y + int(block_size + block_size_adjustment[0])
+        self.end_x = self.start_x + block_size
+        self.end_y = self.start_y + block_size
         debug_report(f'in the end x: {(self.start_x, self.end_x)}, y: {(self.start_y, self.end_y)}', debug)
-        self.add_cropped_images(debug=debug, plot_images=debug)
+        # self.add_cropped_images(debug=debug, plot_images=debug)
         return
 
     def add_cropped_images(self, debug=False, plot_images=False):
@@ -219,8 +216,9 @@ class Block:
             debug_report(f'Cluster{cluster_id} -> After: spots_coords_in_block_list={cluster.spots_coords_in_block_list}', debug)
         # self.add_cropped_images(debug=debug,plot_images=debug)
         debug_report(f'{self.full_report(debug)}', debug)
-        self.update_min_max_coords_of_clusters()
-        self.add_cropped_images()
+        self.update_min_max_coords_of_clusters(debug=debug)
+        self.add_cropped_images(debug=debug)
+        # self.create_block_mask(debug=debug)
 
     def update_block_x_y_backup(self, debug=False):
         debug_report(f'** running update_block_x_y_backup for block{self.block_id}', debug)
@@ -459,7 +457,10 @@ start x,y: {(self.start_x, self.start_y)}, backup start x,y: {(self.backup_start
             debug_report(f'going for these clusters: {self.clusters_ids_list}',debug)
             for cluster_id in self.clusters_ids_list:
                 cluster = ScanDataObj.get_scan_data(self.file_name).get_cluster(cluster_id)
-                debug_report(f'1) before update min_max is: {self.min_max_coords_of_clusters }',debug)
+                if cluster is None:
+                    print(cluster_id)
+                    continue
+                debug_report(f'cluster{cluster_id}: 1) before update min_max is: {self.min_max_coords_of_clusters }',debug)
                 debug_report(f'and input_coords_list = {cluster.spots_coords_list}',debug)
                 self.min_max_coords_of_clusters = CommonFunctions.find_min_max_coords(
                     input_coords_list=cluster.spots_coords_list,
@@ -504,7 +505,7 @@ start x,y: {(self.start_x, self.start_y)}, backup start x,y: {(self.backup_start
         #             [min_x, max_x, min_y, max_y] = self.update_min_max_coords_of_clusters(self, coords_list, debug)
 
         mask = mask.astype(np.uint8)
-        margin = int(3*data_obj.avg_spot_r) #checkme:
+        margin = int(2.5*data_obj.avg_spot_r) #checkme:
         debug_report(
             f'after the loop, mask is {mask.shape}, min_max_coords_of_clusters={self.min_max_coords_of_clusters}, start (x,y)={(self.start_x, self.start_y)} and margin = {margin}',
             debug)
@@ -512,9 +513,14 @@ start x,y: {(self.start_x, self.start_y)}, backup start x,y: {(self.backup_start
         if any(value is None for value in self.min_max_coords_of_clusters.values()):
             self.update_min_max_coords_of_clusters(debug=debug)
         # changing absolute coords to relative to the block start coords!
-        mask_min_x = int(max(0, self.min_max_coords_of_clusters['min_x'] - self.start_x - margin))
+        debug_report(f'self.min_max_coords_of_clusters={self.min_max_coords_of_clusters}', debug)
+        new_mask_min_x = self.min_max_coords_of_clusters['min_x'] - self.start_x - margin
+        new_mask_min_y = self.min_max_coords_of_clusters['min_y'] - self.start_y - margin
+        debug_report(f'new_mask_min_x={new_mask_min_x} & new_mask_min_y={new_mask_min_y}', debug)
+
+        mask_min_x = int(max(0, new_mask_min_x))
         mask_max_x = int(self.min_max_coords_of_clusters['max_x'] - self.start_x + margin)
-        mask_min_y = int(max(0, self.min_max_coords_of_clusters['min_y'] - self.start_y - margin))
+        mask_min_y = int(max(0, new_mask_min_y))
         mask_max_y = int(self.min_max_coords_of_clusters['max_y'] - self.start_y + margin)
         debug_report(
             f'mask_min_x={mask_min_x}, mask_max_x={mask_max_x}, mask_min_y={mask_min_y}, mask_max_y={mask_max_y}',
@@ -641,7 +647,7 @@ start x,y: {(self.start_x, self.start_y)}, backup start x,y: {(self.backup_start
         data_obj = ScanDataObj.get_scan_data(self.file_name)
         for cid in self.clusters_ids_list:
             c = data_obj.get_cluster(cid)
-            output += c.full_report(return_str=return_str)
+            output += c.full_report(return_str=1)
         if return_str in [True, 1]:
             return output
         else:
@@ -900,6 +906,7 @@ start x,y: {(self.start_x, self.start_y)}, backup start x,y: {(self.backup_start
             f'(start_x,start_y): {(self.start_x, self.start_y)}, match_top_left: {match_top_left}, template_block.mask_start_coords: {template_block.mask_start_coords} => delta x,y: {(delta_x, delta_y)}',
             debug)
 
+
         new_start_x = max(self.start_x + delta_x, 0)
         new_start_y = max(self.start_y + delta_y, 0)
 
@@ -916,8 +923,8 @@ start x,y: {(self.start_x, self.start_y)}, backup start x,y: {(self.backup_start
             debug=debug,
         )
 
-        if self.start_x + delta_x < 0 or self.start_y + delta_y < 0:
-            cluster_move = [move_match[0] + delta_x, move_match[1] + delta_y]
+        # if self.start_x + delta_x < 0 or self.start_y + delta_y < 0:
+        #     cluster_move = [move_match[0] + delta_x, move_match[1] + delta_y]
 
         debug_report(f'move_match={move_match},delta_x_y={[delta_x, delta_y]},cluster_move={cluster_move}', debug)
         return {'move_match': move_match, 'cluster_move': cluster_move}

@@ -169,7 +169,7 @@ class Cluster:
 
         self.spots_coords_in_block_list = []
         for x, y, r in self.spots_coords_list: # loop over all spots in these cluster
-            self.spots_coords_in_block_list.append(np.array([x-self.block_start_x, y-self.block_start_y, r]))
+            self.spots_coords_in_block_list.append(np.array([int(x-self.block_start_x), int(y-self.block_start_y, r)]))
 
         self.avg_x_in_block = int(np.mean([arr[0] for arr in self.spots_coords_in_block_list]))
         self.avg_y_in_block = int(np.mean([arr[1] for arr in self.spots_coords_in_block_list]))
