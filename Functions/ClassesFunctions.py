@@ -181,6 +181,9 @@ def final_edits_after_adding_clusters_to_block(file_name, block_id, debug=False,
     block.add_cropped_images(debug=debug, plot_images=plot_images)
     block.save_backup(debug=debug)
     data_obj.add_new_block_to_dict(block=block)
+    block.create_block_mask(debug=debug, plot_images=plot_images)
+    block.save_backup(debug=debug)
+    data_obj.add_new_block_to_dict(block=block)
     # block.add_cropped_images(debug=debug)
     # if debug:
     #     block.plot_block(pic_size=400, debug=debug)
@@ -290,23 +293,24 @@ def read_scan_data_from_pickle(file_name, path, start_over=False, plot_results=F
 
 
 #%%
-def plot_blocks_on_image(file_name, debug=False):
+def plot_blocks_on_image(file_name, blocks_ids_lists=None, debug=False):
     data_obj = ScanDataObj.get_scan_data(file_name)
     blocks_ids_lists = list(data_obj.get_blocks_dict().keys())
     input_image = deepcopy(ScanDataObj.get_image_from_dict(file_name=file_name, dict_key='file_image'))
 
-
-    if data_obj.assay == 'OF':
-        borders_image = deepcopy(input_image)
-
-    else:
+    borders_image = deepcopy(input_image)
+    if data_obj.assay == 'SD4':
         h, w = input_image.shape
-        borders_image = deepcopy(input_image)[:h//2,:]
-        blocks_ids_lists = blocks_ids_lists[: len(blocks_ids_lists) // 2]
+        # borders_image = deepcopy(input_image)[h//2:,:]
+        blocks_ids_lists = blocks_ids_lists[len(blocks_ids_lists) // 2:]
 
     for block_id in blocks_ids_lists:
         block = data_obj.get_block(block_id)
-        cv2.rectangle(borders_image, (block.start_x, block.start_y), (block.end_x, block.end_y), (0, 0, 0), 2)
+        if (block.col_number+block.row_number) % 2 == 0:
+            cv2.rectangle(borders_image, (block.start_x, block.start_y), (block.end_x, block.end_y), (255, 0, 0), thickness=20,)
+        else:
+            cv2.rectangle(borders_image, (block.start_x, block.start_y), (block.end_x, block.end_y), (0, 0, 0), thickness=20)
+
         cv2.putText(borders_image, block_id, (block.start_x + 10, block.start_y + 50), cv2.FONT_HERSHEY_SIMPLEX, 2,
                     (255, 255, 255), 2)
     CommonFunctions.display_in_console(borders_image)
@@ -617,7 +621,7 @@ def do_final_results_plot(file_name, block_ids_list, picture=None, debug=False, 
         for block_id in block_ids_list:
             block = data_obj.get_block(block_id)
             picture[block_id] = block.plot_block(plot_images=0, label=block_id, with_border=0,
-                                                 fig_size=300, crop_to_mask=1, debug=debug)
+                                                 fig_size=300, crop_to_mask=0, debug=debug)
 
     for i in range(int(len(block_ids_list) / block_ncol)):
         p1 = picture[block_ids_list[block_ncol * i]]

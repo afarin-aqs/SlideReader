@@ -862,13 +862,15 @@ start x,y: {(self.start_x, self.start_y)}, backup start x,y: {(self.backup_start
             move_match = [0, 0]
         data_obj = ScanDataObj.get_scan_data(file_name=self.file_name)
         block_size = data_obj.block_size
-        template_block = data_obj.get_block(template_block_id)
+        template_block: Block = data_obj.get_block(template_block_id)
+        if 'block_mask' not in ScanDataObj.get_image_from_dict(file_name=self.file_name,dict_key=template_block.block_id).keys():
+            template_block.create_block_mask(debug=debug)
+
         template_block_mask = ScanDataObj.get_block_image(
             file_name=self.file_name,
             block_id=template_block.block_id,
             image_tag='block_mask'
         )
-
         # if move_match != [0,0]:
         #     self.set_start_and_end_of_block()
         match_top_left = self.find_pattern_in_a_block(

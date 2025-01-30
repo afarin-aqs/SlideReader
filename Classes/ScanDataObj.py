@@ -50,7 +50,7 @@ class ScanData:
             }
         if not clustering_params_DBSCAN:
             self.clustering_params_DBSCAN = {
-                'eps': 1200,  # lower means harder
+                'eps': 990,  # lower means harder
                 'min_samples': 4,
                 'x_power': 3,
                 'y_power': 7,
@@ -244,11 +244,11 @@ def get_block_image(file_name, block_id, image_tag=None):
         print(f'file_name {file_name} is not in the dict!!!')
         return None
     if block_id not in images_dict[file_name]:
-        print(f'{block_id} is not here... :| !!!')
+        print(f'block_id{block_id} is not here... :| !')
         return None
     block_images = images_dict[file_name][block_id]
     if image_tag not in block_images:
-        print(f'{image_tag} is not here... :| !!!')
+        print(f'image_tag{image_tag} is not here... :| !!!')
         return None
     return block_images[image_tag]
 
