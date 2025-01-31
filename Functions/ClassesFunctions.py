@@ -266,7 +266,7 @@ def load_block_related_images(file_name, debug=False, plot_images=False):
 def read_scan_data_from_pickle(file_name, path, start_over=False, plot_results=False, debug=False):
     # this is when there is no pickle to read from, or we need to reset it
     if start_over:
-        print("start_over is True, so I'm exiting by returning None")
+        print("start_over is True")
         return None
 
     # if we want to read the scan data from pickles already scanned data (start_over=False)
@@ -276,8 +276,9 @@ def read_scan_data_from_pickle(file_name, path, start_over=False, plot_results=F
         load_block_related_images(file_name=file_name, debug=debug, plot_images=plot_results)
 
     except Exception:
-        print(f"No file with name {file_name} -> calling this function again to start over!")
-        loaded_scan_data = read_scan_data_from_pickle(file_name=file_name, path=path, start_over=True, plot_results=plot_results, debug=debug)
+        print(f"No file with name {file_name}!")
+        loaded_scan_data = read_scan_data_from_pickle(file_name=file_name, path=path, start_over=True,
+                                                      plot_results=plot_results, debug=debug)
     return loaded_scan_data
 
 #%%
@@ -307,8 +308,8 @@ def plot_blocks_on_image(file_name, debug=False):
 
     else:
         h, w = input_image.shape
-        borders_image = deepcopy(input_image)[:h//2,:]
-        blocks_ids_lists = blocks_ids_lists[: len(blocks_ids_lists) // 2]
+        borders_image = deepcopy(input_image)[:h//3,:]
+        blocks_ids_lists = blocks_ids_lists[: len(blocks_ids_lists) // 3]
 
     for block_id in blocks_ids_lists:
         block = data_obj.get_block(block_id)
