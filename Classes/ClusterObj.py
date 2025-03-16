@@ -65,7 +65,7 @@ class Cluster:
             return
 
         # if there are other spots there already, need to check if the spot is a duplicate or not
-        is_duplicate = np.any(np.all(self.spots_coords_list == spot_coords))
+        is_duplicate = np.any([np.array_equal(spot, spot_coords) for spot in self.spots_coords_list])
         if is_duplicate:
             debug_report(f'We already had spot {spot_coords} in cluster{self.cluster_id} :/', debug)
             return
@@ -283,19 +283,20 @@ class Cluster:
         if not commands_list:
             return
         """ prompt samples: 
-            - to delete spot(s): del + spot + position(s) 
+            - delete spot(s) from a cluster with position ind: del + spot + position(s) 
                             -> 'del spot-1, 2', 'del spot0,1,2,3'
 
-            - to add spot(s): add + count + left(l)/right(r) 
+            - add spot(s) to right or left side of a cluster: add + count + left(l)/right(r) 
                             -> 'add 1 to r', 'add 2 to left' 
 
-            - to move spots: move + spot + position/"all" + number_of_pixels + up(u)/down(d)/left(l)/right(r) 
+            - move a spot or all spots in a cluster: move + spot + position/"all" + number_of_pixels + up(u)/down(d)/left(l)/right(r) 
                             -> 'move spot2 10 up, 5 right', 'move all 20 left'
 
-            - to change radius: change_r + spot + position + r + pixel_change_value
+            - change radius of a spot or all spots in a cluster: change_r + spot + position + r + pixel_change_value
                             -> 'change_r spot3 r+2', 'change_r spot6 r-1'
 
-
+            - add another cluster below/above an already existing cluster
+            - delete a cluster
 
         ** positions are: 0,1,2,3,.... or ...,-3,-2,-1
 

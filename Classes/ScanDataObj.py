@@ -84,9 +84,9 @@ class ScanData:
             self.block_ncol = 3
             self.block_nrow = 8
             if self.scan_size == 10:
-                self.block_size = 500
+                self.block_size = 450
             elif self.scan_size == 5:
-                self.block_size = 920
+                self.block_size = 900
         elif self.assay == 'SD4':
             self.block_ncol = 4
             self.block_nrow = 16

@@ -37,6 +37,7 @@ def create_new_block(file_name, block_id, init_offset=None, block_distance_adjus
 def init_blocks_dict(file_name, init_offset=None, block_size_adjustment=0, debug_block_ids=None,
                      block_distance_adjustment=None, debug=False, plot_blocks=False):
     debug_report(f'** running "init_blocks_dict"', debug)
+    block_ids_for_plot = ['r0c0', 'r0c3', 'r2c0', 'r2c3', 'r4c0', 'r4c3']
     if debug_block_ids is None:
         debug_block_ids = []
 
@@ -52,7 +53,7 @@ def init_blocks_dict(file_name, init_offset=None, block_size_adjustment=0, debug
             debug_block = True if debug or block_id in debug_block_ids else False
             block = create_new_block(file_name=file_name, block_id=block_id, debug=debug_block,
                                      init_offset=init_offset, block_distance_adjustment=block_distance_adjustment)
-            if plot_blocks and debug_block:
+            if plot_blocks and debug_block and block_id in block_ids_for_plot:
                 block.plot_block(debug=debug_block, fig_size=[5,5])
             data_obj.add_new_block_to_dict(block)
     ScanDataObj.update_scan_data_dict(data_obj)
@@ -311,11 +312,15 @@ def plot_blocks_on_image(file_name, debug=False):
         borders_image = deepcopy(input_image)[:h//3,:]
         blocks_ids_lists = blocks_ids_lists[: len(blocks_ids_lists) // 3]
 
+
+    block_ids_for_plot = ['r0c0', 'r0c3', 'r2c0', 'r2c3', 'r4c0', 'r4c3']
     for block_id in blocks_ids_lists:
+        if block_id not in block_ids_for_plot:
+            continue
         block = data_obj.get_block(block_id)
-        cv2.rectangle(borders_image, (block.start_x, block.start_y), (block.end_x, block.end_y), (0, 0, 0), 2)
-        cv2.putText(borders_image, block_id, (block.start_x + 10, block.start_y + 50), cv2.FONT_HERSHEY_SIMPLEX, 2,
-                    (255, 255, 255), 2)
+        cv2.rectangle(borders_image, (block.start_x, block.start_y), (block.end_x, block.end_y), (0, 0, 0), 10)
+        cv2.putText(borders_image, block_id, (block.start_x + 10, block.start_y + 50), cv2.FONT_HERSHEY_SIMPLEX, 10,
+                    (255, 255, 255), 20)
     CommonFunctions.display_in_console(borders_image)
     return borders_image
 
@@ -553,7 +558,7 @@ def edit_multiple_blocks(block_ids_list, file_name, manual_spot_edit_dict=None, 
 
     for block_id in block_ids_list:
         debug_block = True if block_id in debug_blocks else debug
-
+        print(block_id,debug_block)
         block = data_obj.get_block(block_id)
         if block.dont_touch_this_block:
             continue

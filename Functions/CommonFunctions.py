@@ -170,6 +170,7 @@ def load_image(file_name, path,  rotation=0, debug=False, plot_images=False):
     debug_report(f'running "load_image" for {input_path}', debug)
     try:
         image = cv2.imread(input_path, cv2.IMREAD_UNCHANGED)
+        debug_report(f'loaded image is {image.shape}', debug)
         if rotation == 180:
             # image = np.array(image.transpose(Image.ROTATE_180))
             image = cv2.rotate(image, cv2.ROTATE_180)
