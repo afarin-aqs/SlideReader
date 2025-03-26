@@ -1097,6 +1097,9 @@ start x,y: {(self.start_x, self.start_y)}, backup start x,y: {(self.backup_start
                 colored_image = cv2.rectangle(colored_image, start_point, end_point, (70, 70, 70), 2)
                 cluster.plot_cluster_on_image(colored_image, debug=debug)
 
+            elif description == 'full_report':
+                cluster.plot_cluster_on_image(colored_image, name_tag=f'{cluster.name}:{intensity}', debug=debug)
+                label = f'{self.block_id} - {self.target}@{self.Ag_conc} - {self.dAb_label}'
             elif description == 'custom':
                 cluster.plot_cluster_on_image(colored_image, name_tag=custom_cAb_names[i], debug=debug)
             else:
@@ -1120,7 +1123,7 @@ start x,y: {(self.start_x, self.start_y)}, backup start x,y: {(self.backup_start
 
         elif label is True:
             label = self.block_id
-        cv2.putText(cropped_img, label, (10, 50), cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 255, 255), 2)
+        cv2.putText(cropped_img, label, (10, 50), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (255, 255, 255), 2)
 
         coords = (int(self.start_x), int(self.start_y))
         if debug:
