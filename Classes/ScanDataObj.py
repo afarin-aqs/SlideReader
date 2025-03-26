@@ -274,5 +274,6 @@ def get_block_image(file_name, block_id, image_tag=None):
         return None
     return block_images[image_tag]
 
-
+def init_images_dict_from_file(file_name, debug=False):
+    scan_data = get_scan_data(file_name)
 

@@ -558,7 +558,6 @@ def edit_multiple_blocks(block_ids_list, file_name, manual_spot_edit_dict=None, 
 
     for block_id in block_ids_list:
         debug_block = True if block_id in debug_blocks else debug
-        print(block_id,debug_block)
         block = data_obj.get_block(block_id)
         if block.dont_touch_this_block:
             continue
@@ -645,7 +644,7 @@ def do_final_results_plot(file_name, block_ids_list, picture=None, debug=False, 
             p4 = picture[block_ids_list[block_ncol * i + 3]]
             top = CommonFunctions.pad_and_concat_images(p1, p2, axis=1)
             bottom = CommonFunctions.pad_and_concat_images(p3, p4, axis=1)
-            combined_image = CommonFunctions.pad_and_concat_images(top, bottom, axis=0)
+            combined_image = CommonFunctions.pad_and_concat_images(top, bottom, axis=1)
         elif block_ncol == 3:
             col_one = CommonFunctions.pad_and_concat_images(p1, p2, axis=0)
             combined_image = CommonFunctions.pad_and_concat_images(col_one, p3, axis=0)

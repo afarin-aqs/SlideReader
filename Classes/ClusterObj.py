@@ -250,6 +250,7 @@ class Cluster:
             debug)
         coords = self.spots_coords_list[spot_ind].copy()
         coords[2] += int(r_change)
+        coords[2] = max(0, coords[2])
         self.spots_coords_list[spot_ind] = coords.copy()
         debug_report(f'After -> spots_coords_list={self.spots_coords_list}', debug)
 
@@ -830,4 +831,4 @@ class Cluster:
         if return_str in [True, 1]:
             return output
         else:
-            print(return_str)
+            print(output)

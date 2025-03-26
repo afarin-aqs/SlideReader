@@ -121,11 +121,11 @@ class Block:
 
         start_x = int(self.col_number*(block_size+block_distance[0]) + first_block_offset[0])
         start_y = int(self.row_number*(block_size+block_distance[1]) + first_block_offset[1])
-        self.set_start_coords((start_x, start_y))
+        self.set_start_coords((start_x, start_y),debug=debug)
 
         end_x = self.start_x + int(block_size + block_size_adjustment[0])
         end_y = self.start_y + int(block_size + block_size_adjustment[1])
-        self.set_end_coords((end_x, end_y))
+        self.set_end_coords((end_x, end_y),debug=debug)
 
         debug_report(f'in the end x: {(self.start_x, self.end_x)}, y: {(self.start_y, self.end_y)}', debug)
         return
@@ -212,7 +212,7 @@ class Block:
         # also makes adjustments for clusters
         # it will not add cropped image, and it will not save backups.
 
-        debug=True
+        # debug=True
         debug_report(f'** B5: running reset_block_xy_definition for block{self.block_id}:\n{self.full_report(debug)}', debug)
         debug_report(f'In the beginning x: {self.start_x}-{self.end_x} & y: {self.start_y}-{self.end_y}', debug)
         debug_report(f'But we wanna reset them to -> start_coords={start_coords}, end_coords={end_coords}',debug)
@@ -221,8 +221,8 @@ class Block:
             debug_report(f'NO NEED FOR UPDATE!', debug)
             return
 
-        self.set_start_coords(deepcopy(start_coords))
-        self.set_end_coords(deepcopy(end_coords))
+        self.set_start_coords(deepcopy(start_coords),debug=debug)
+        self.set_end_coords(deepcopy(end_coords),debug=debug)
 
         data_obj = ScanDataObj.get_scan_data(self.file_name)
         for cluster_id in self.clusters_ids_list:
@@ -844,6 +844,11 @@ start x,y: {(self.start_x, self.start_y)}, backup start x,y: {(self.backup_start
             f'** running find_pattern_in_a_block for block{self.block_id} --- input move_match={move_match}',
             debug)
 
+        # fixme: fix this shit!!!
+        if self.row_number > 10:
+            self.reset_block_start_end_coords((self.start_x-200, self.start_y), [self.end_x+200, self.end_y], debug=False)
+            self.add_cropped_images()
+
         image = ScanDataObj.get_block_image(file_name=self.file_name, block_id=self.block_id, image_tag='image')
         processed_image = CommonFunctions.image_preprocessing(input_image=image, params=preprocess_params)
         debug_report(f'processed_image is {processed_image.shape} and pattern is {pattern.shape}', debug)
@@ -854,6 +859,7 @@ start x,y: {(self.start_x, self.start_y)}, backup start x,y: {(self.backup_start
             print(f'\nand this is the template pattern:', end='')
             CommonFunctions.display_in_console(pattern, fig_size=[5,5])
 
+        # if processed_image
         match_result = cv2.matchTemplate(processed_image, pattern, matching_method)
         _, _, min_loc, max_loc = cv2.minMaxLoc(match_result)
 
@@ -894,6 +900,8 @@ start x,y: {(self.start_x, self.start_y)}, backup start x,y: {(self.backup_start
             image_tag='block_mask'
         )
 
+        if template_block_mask is None:
+            template_block_mask = template_block.create_block_mask(debug=debug, plot_images=plot_images)
         # if move_match != [0,0]:
         #     self.set_start_and_end_of_block()
         match_top_left = self.find_pattern_in_a_block(

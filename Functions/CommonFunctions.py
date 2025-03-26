@@ -1,5 +1,6 @@
 import pandas as pd
 from scipy import ndimage
+
 pd.options.mode.chained_assignment = None  # default='warn'
 import inspect
 import json
@@ -17,9 +18,13 @@ import itertools
 from copy import deepcopy
 from importlib import reload
 from Classes import ScanDataObj
+from os import listdir
+from os.path import isfile, join
+
 reload(ScanDataObj)
 
-#%%
+
+# %%
 def find_min_max_coords(input_coords_list, min_max_dict):
     min_x = deepcopy(min_max_dict['min_x'])
     max_x = deepcopy(min_max_dict['max_x'])
@@ -37,8 +42,9 @@ def find_min_max_coords(input_coords_list, min_max_dict):
     return {'min_x': min_x, 'max_x': max_x, 'min_y': min_y, 'max_y': max_y}
 
 
-#%%
+# %%
 color_dict = {}
+
 
 # %%
 def give_variant_from_text(text=""):
@@ -54,6 +60,7 @@ def give_variant_from_text(text=""):
             variants.append(match)
     # Print the extracted codes
     print(variants)
+
 
 # %%
 def extract_category_numbers(text):
@@ -75,7 +82,6 @@ def find_matches(category_numbers, lookup_text):
                         value in category_numbers]
 
     return filtered_matches
-
 
 
 # %%
@@ -113,6 +119,7 @@ def display_in_console(image, text='', fig_size=None, plot_images=True):
     if not plot_images:
         return
     print('\n', text, end='')
+    # show(image, plot_images=plot_images)
     if fig_size is None:
         fig_size = [7, 7]
     plt.figure(figsize=fig_size)  # Adjust the figure size for better visualization
@@ -145,7 +152,8 @@ def pad_and_concat_images(img1, img2, pad_value=0, sep_width=3, axis=1):  # hori
 
 # %%
 def give_scaled_log_image(input_image, debug=False):
-    debug_report(f'input_image range: {int(np.min(input_image))} - {int(np.max(input_image))} ({input_image.dtype})', debug)
+    debug_report(f'input_image range: {int(np.min(input_image))} - {int(np.max(input_image))} ({input_image.dtype})',
+                 debug)
 
     if np.min(input_image) == 0:
         input_image[input_image == 0] = 1
@@ -155,8 +163,7 @@ def give_scaled_log_image(input_image, debug=False):
                  f'{int(np.min(logged_image))} - {int(np.max(logged_image))} '
                  f'({logged_image.dtype})', debug)
 
-    scaled_logged_image = cv2.normalize(logged_image, None, alpha=0, beta=255,
-                                        norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_8U)
+    scaled_logged_image = cv2.normalize(logged_image, None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_8U)
 
     debug_report(f'scaled_logged_image range: '
                  f'{int(np.min(scaled_logged_image))} - {int(np.max(scaled_logged_image))} '
@@ -165,7 +172,7 @@ def give_scaled_log_image(input_image, debug=False):
     return scaled_logged_image
 
 
-def load_image(file_name, path,  rotation=0, debug=False, plot_images=False):
+def load_image(file_name, path, rotation=0, debug=False, plot_images=False):
     input_path = path + '/' + file_name + '.tif'
     debug_report(f'running "load_image" for {input_path}', debug)
     try:
@@ -182,7 +189,8 @@ def load_image(file_name, path,  rotation=0, debug=False, plot_images=False):
             show(scaled_logged_image)
 
         ScanDataObj.add_to_images_dict(file_name=file_name, dict_key='file_image', dict_value=image)
-        ScanDataObj.add_to_images_dict(file_name=file_name, dict_key='file_scaled_image', dict_value=scaled_logged_image)
+        ScanDataObj.add_to_images_dict(file_name=file_name, dict_key='file_scaled_image',
+                                       dict_value=scaled_logged_image)
         return image, scaled_logged_image
     except Exception as e:
         print(f"Exception:\n{e}")
@@ -369,19 +377,20 @@ def find_circles_with_contour_detection(input_image, params, plot_images=False, 
 #     return range_dict
 
 def how_many_cluster_circles_is_here(input_image, preprocess_params, clustering_params,
-                                    circle_finding_params, debug=False, plot_images=False, max_num_of_circles=1000):
+                                     circle_finding_params, debug=False, plot_images=False, max_num_of_circles=1000):
     input_image = deepcopy(input_image)
     # debug_report(f'{preprocess_params} & {circle_finding_params}', debug)
     found_circles = circle_detection(
         input_image, detection_params=circle_finding_params, preprocess_params=preprocess_params
     )
-    if not found_circles or found_circles==[] or len(found_circles) > max_num_of_circles:
+    if not found_circles or found_circles == [] or len(found_circles) > max_num_of_circles:
         return None, None
 
     predicted_clusters_ids, colored_image = DBSCAN_clustering(
-        found_circles, input_image,params=clustering_params, return_colored_img_too=True
+        found_circles, input_image, params=clustering_params, return_colored_img_too=True
     )
-    found_cluster_circles_counts = len([x for x in predicted_clusters_ids if x != -1]) * len({x for x in predicted_clusters_ids if x != -1})
+    found_cluster_circles_counts = len([x for x in predicted_clusters_ids if x != -1]) * len(
+        {x for x in predicted_clusters_ids if x != -1})
     return found_cluster_circles_counts, colored_image
 
 
@@ -410,29 +419,31 @@ def do_parameter_optimization(input_image, init_params=None, max_num_of_circles=
     init_circle_finding_params = init_params['cf']
     init_clustering_params = init_params['cl']
 
-    debug_report(f'init_params={init_params}',debug)
+    debug_report(f'init_params={init_params}', debug)
     c = search_step
 
     optimization_params = {
         'pp': {
-            'blur_kernel_size': [max(1,init_preprocess_params['blur_kernel_size'] + x + (0 if (init_preprocess_params['blur_kernel_size'] + x) % 2 == 1 else 1)) for x in [-9//c, 0, 9//c]],
-            'contrast_thr': [max(1,init_preprocess_params['contrast_thr'] + x) for x in [-100//c, 0, 100//c]],
-            'canny_edge_thr1': [max(1,init_preprocess_params['canny_edge_thr1'] + x) for x in [-20//c, 0, 20//c]],
-            'canny_edge_thr2': [max(1,init_preprocess_params['canny_edge_thr2'] + x) for x in [-20//c, 0, 20//c]],
+            'blur_kernel_size': [max(1, init_preprocess_params['blur_kernel_size'] + x + (
+                0 if (init_preprocess_params['blur_kernel_size'] + x) % 2 == 1 else 1)) for x in [-9 // c, 0, 9 // c]],
+            'contrast_thr': [max(1, init_preprocess_params['contrast_thr'] + x) for x in [-100 // c, 0, 100 // c]],
+            'canny_edge_thr1': [max(1, init_preprocess_params['canny_edge_thr1'] + x) for x in [-20 // c, 0, 20 // c]],
+            'canny_edge_thr2': [max(1, init_preprocess_params['canny_edge_thr2'] + x) for x in [-20 // c, 0, 20 // c]],
         },
         'cf': {
-            'dp': [max(1,init_circle_finding_params['dp'] + x) for x in [-0.3//c, 0, 0.3//c]],
-            'param1': [max(1,init_circle_finding_params['param1'] + x) for x in [-15//c, 0, 15//c]],
-            'param2': [max(1,init_circle_finding_params['param2'] + x) for x in [-15//c, 0, 15//c]],
+            'dp': [max(1, init_circle_finding_params['dp'] + x) for x in [-0.3 // c, 0, 0.3 // c]],
+            'param1': [max(1, init_circle_finding_params['param1'] + x) for x in [-15 // c, 0, 15 // c]],
+            'param2': [max(1, init_circle_finding_params['param2'] + x) for x in [-15 // c, 0, 15 // c]],
         }
     }
 
-    debug_report(optimization_params,debug)
+    debug_report(optimization_params, debug)
     # todo: clean up here ...
     pp_combos = list(itertools.product(*optimization_params['pp'].values()))
     cf_combos = list(itertools.product(*optimization_params['cf'].values()))
     total_steps = len(pp_combos) * len(cf_combos)
-    print(f'pp_combinations are {len(pp_combos)} and cf_combinations are {len(cf_combos)} => total combinations={total_steps}')
+    print(
+        f'pp_combinations are {len(pp_combos)} and cf_combinations are {len(cf_combos)} => total combinations={total_steps}')
     print('Checked Combinations:')
     max_cluster_circles_count = 0
     max_num_clusters = 0
@@ -477,12 +488,10 @@ def do_parameter_optimization(input_image, init_params=None, max_num_of_circles=
             if plot_images or debug:
                 display_in_console(best_colored_image)
 
-
     debug_report(f'in the end, optimized_params={final_optimized_params}', debug)
     display_in_console(best_colored_image)
     final_optimized_params['cl'] = init_clustering_params
     return final_optimized_params
-
 
 
 # %%
@@ -562,12 +571,12 @@ def distance_metric(circle1, circle2, params):
 
     extra_y_cost = 0
     if 'extra_y_cost' in params and params['extra_y_cost'] is True:
-        extra_y_cost = -(y1.astype(int)+y2.astype(int)).astype(int)
+        extra_y_cost = -(y1.astype(int) + y2.astype(int)).astype(int)
 
     delta_x = x1.astype(int) - x2.astype(int)
     delta_y = y1.astype(int) - y2.astype(int)
 
-    cost = np.sqrt(np.abs(np.abs(delta_x) ** params['x_power'] + np.abs(delta_y) ** params['y_power']+extra_y_cost))
+    cost = np.sqrt(np.abs(np.abs(delta_x) ** params['x_power'] + np.abs(delta_y) ** params['y_power'] + extra_y_cost))
 
     #     print(circle1,circle2,cost)
     return cost
@@ -575,14 +584,13 @@ def distance_metric(circle1, circle2, params):
 
 def DBSCAN_clustering(sorted_circles, input_image, params=None, plot_images=False,
                       debug=False, debug_clusters_ids=None, fig_size=None, return_colored_img_too=False):
-
     debug_report(f'\n** running "DBSCAN_clustering"', debug)
 
     if params is None:
         params = {}
 
     if not debug_clusters_ids:
-        debug_clusters_ids=[]
+        debug_clusters_ids = []
 
     # this is the cool part!! :D
     custom_metric = partial(distance_metric, params=params)
@@ -607,11 +615,13 @@ def DBSCAN_clustering(sorted_circles, input_image, params=None, plot_images=Fals
         debug_colored_image = make_3D_image(input_image)
     clusters_ids_list = []
     # debug_plot_coords = {}
-    plot_coords = [np.inf,np.inf,0,0]
+    plot_coords = [np.inf, np.inf, 0, 0]
     for index, cluster_id in enumerate(predicted_clusters_ids):
         debug_cluster = debug or cluster_id in debug_clusters_ids
         spot_coords = [int(x) for x in sorted_circles[index]]
         x, y, r = spot_coords
+        if spot_coords == [722, 4656, 17]:
+            print(spot_coords, index, cluster_id)
         cv2.circle(colored_image, (x, y), r, (0, 0, 0), 3)
 
         if cluster_id == -1:
@@ -623,8 +633,8 @@ def DBSCAN_clustering(sorted_circles, input_image, params=None, plot_images=Fals
         cv2.circle(colored_image, (x, y), r, color, 2)
         if cluster_id not in clusters_ids_list:
             text_size = cv2.getTextSize(str(cluster_id), cv2.FONT_HERSHEY_SIMPLEX, 0.1, 1)[0]
-            text_x = max(x,25) - text_size[0] // 2 - 10
-            text_y = max(y,25) + text_size[1] // 2 - 10
+            text_x = max(x, 25) - text_size[0] // 2 - 10
+            text_y = max(y, 25) + text_size[1] // 2 - 10
 
             cv2.putText(colored_image, str(cluster_id), (text_x, text_y), cv2.FONT_HERSHEY_SIMPLEX,
                         1, color, 2, cv2.LINE_AA)
@@ -666,7 +676,8 @@ def DBSCAN_clustering(sorted_circles, input_image, params=None, plot_images=Fals
         # print(1, debug_colored_image.shape, 'and coords are', plot_coords)
         # print(f'[{plot_coords[i]}-{pad}:{plot_coords[i+2]}+{pad}, {plot_coords[j]}-{pad}:{plot_coords[j+2]}+{pad}]')
         # print(f'=== [{plot_coords[i]-pad}:{plot_coords[i+2]+pad}], {plot_coords[j]-pad}:{plot_coords[j+2]+pad}')
-        img = debug_colored_image[plot_coords[i]-pad:plot_coords[i+2]+pad,plot_coords[j]-pad:plot_coords[j+2]+pad]
+        img = debug_colored_image[plot_coords[i] - pad:plot_coords[i + 2] + pad,
+              plot_coords[j] - pad:plot_coords[j + 2] + pad]
         # print(2, img.shape)
         show(img, plot_images=True)
     if return_colored_img_too:
@@ -796,6 +807,8 @@ def print_inside_dict_shapes(input_dict=None):
             shapes[key] = len(value)
 
     return shapes
+
+
 # %%
 def optimized_spots_coords(input_image, coords_list, fg_inc_pixels=1, search_vec=None, avg_r=25, debug=False):
     if search_vec is None:
@@ -803,7 +816,7 @@ def optimized_spots_coords(input_image, coords_list, fg_inc_pixels=1, search_vec
         debug_report(f'search_vec is {search_vec}', debug)
 
     input_image = deepcopy(input_image)
-    debug_report(f'input image is {input_image.shape}',debug)
+    debug_report(f'input image is {input_image.shape}', debug)
 
     foreground = np.zeros(input_image.shape)
 
@@ -816,20 +829,19 @@ def optimized_spots_coords(input_image, coords_list, fg_inc_pixels=1, search_vec
         spot_best = {'intensity': 0, 'coords': [0, 0, 0]}
         for dx in search_vec:
             for dy in search_vec:
-                r_vec = [0, 1, 2] if r <= avg_r else [0,-1,-2]
+                r_vec = [0, 1, 2] if r <= avg_r else [0, -1, -2]
                 for dr in r_vec:
                     nx = x + dx
                     ny = y + dy
                     nr = r + dr + fg_inc_pixels
-
 
                     spot_fg = np.zeros(input_image.shape)
                     # spot_fg = deepcopy(foreground)
                     cv2.circle(spot_fg, (nx, ny), nr, 1, thickness=-1)
                     fg_label, _ = ndimage.label(spot_fg)
                     fg_mean = ndimage.mean(input_image, fg_label)
-                    debug_report(f'(x,y,r)={(x,y,r)} - fg_mean={fg_mean}', debug)
-                    if fg_mean > spot_best['intensity']: #checkme whats happening here?
+                    debug_report(f'(x,y,r)={(x, y, r)} - fg_mean={fg_mean}', debug)
+                    if fg_mean > spot_best['intensity']:  # checkme whats happening here?
                         spot_best['intensity'] = fg_mean
                         spot_best['coords'] = [nx, ny, nr]
                         debug_report(f"fg_mean={fg_mean}>  spot_best['intensity']={spot_best['intensity']}", debug)
@@ -841,10 +853,9 @@ def optimized_spots_coords(input_image, coords_list, fg_inc_pixels=1, search_vec
     return new_coords_list, highest_intensities_per_spot
 
 
-#%%
-def optimize_the_params(file_name,  how_many_times=1, input_image=None,
-                        max_num_of_circles=200, plot_images=False, debug=False,):
-
+# %%
+def optimize_the_params(file_name, how_many_times=1, input_image=None,
+                        max_num_of_circles=200, plot_images=False, debug=False, ):
     scan_data = ScanDataObj.get_scan_data(file_name=file_name)
     if input_image is None:
         input_image = ScanDataObj.get_image_from_dict(file_name=file_name, dict_key='file_image')
@@ -858,7 +869,7 @@ def optimize_the_params(file_name,  how_many_times=1, input_image=None,
     search_step = 1
 
     for t in range(how_many_times):
-        search_step *= (t+1)
+        search_step *= (t + 1)
         new_params = do_parameter_optimization(
             input_image=input_image,
             debug=debug, plot_images=plot_images,
@@ -873,10 +884,10 @@ def optimize_the_params(file_name,  how_many_times=1, input_image=None,
     return new_params
 
 
-#%%
+# %%
 def test_current_parameters(input_image, file_name, fig_size=None, debug=False):
     if fig_size is None:
-        fig_size = [10,10]
+        fig_size = [10, 10]
 
     scan_data = ScanDataObj.get_scan_data(file_name=file_name)
     test_sorted_circles = circle_detection(
@@ -901,8 +912,7 @@ def test_current_parameters(input_image, file_name, fig_size=None, debug=False):
     return
 
 
-
-#%%
+# %%
 def do_initial_circle_finding(file_name, debug=False, plot_images=False):
     scan_data = ScanDataObj.get_scan_data(file_name=file_name)
     image = ScanDataObj.get_image_from_dict(file_name=file_name, dict_key='file_image')
@@ -917,6 +927,9 @@ def do_initial_circle_finding(file_name, debug=False, plot_images=False):
         plot_images=plot_images
     )
     print('Done!')
+
+    # Using list comprehension
+    sorted_circles = [[int(x) for x in arr] for arr in sorted_circles]
     scan_data.sorted_circles = sorted_circles
 
     print('doing the clustering...', end=' ')
@@ -931,6 +944,3 @@ def do_initial_circle_finding(file_name, debug=False, plot_images=False):
 
     scan_data.predicted_clusters_ids = predicted_clusters_ids
     return
-
-
-
