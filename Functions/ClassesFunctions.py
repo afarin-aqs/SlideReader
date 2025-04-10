@@ -388,7 +388,9 @@ def read_command(command, debug=False):
         debug_report(f"Change Radius Command - Spot: {spot}, Change: {change}", debug)
         return {'action': "change_r", "params": {"spot": spot, "change": change}}
 
-
+    elif command.startswith('merge'):
+        cluster_id = int(re.search(r'\d+', command).group())
+        return {'action': "merge", "params": {"other_cluster_id": cluster_id}}
     else:
         print("Unknown command!!", command)
         return None
@@ -426,12 +428,12 @@ def restore_cluster_from_backup(file_name, cluster_id, debug=False):
 
 def save_current_data_obj(file_name, path=''):
     data_obj = ScanDataObj.get_scan_data(file_name)
-    with open(path + f'{file_name}_data_obj.pickle', 'wb') as file:
+    with open(path + f'/{file_name}_data_obj.pickle', 'wb') as file:
         pickle.dump(data_obj, file)
 
 def load_current_data_obj(file_name, path=''):
     data_obj = ScanDataObj.create_new_scan_data(file_name=file_name)
-    with open(path + f'{file_name}_data_obj.pickle', 'rb') as file:
+    with open(path + f'/{file_name}_data_obj.pickle', 'rb') as file:
         data_obj = pickle.load(file)
     ScanDataObj.update_scan_data_dict(data_obj)
     return

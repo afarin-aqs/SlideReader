@@ -475,6 +475,9 @@ start x,y: {(self.start_x, self.start_y)}, backup start x,y: {(self.backup_start
             debug_report(f'going for these clusters: {self.clusters_ids_list}',debug)
             for cluster_id in self.clusters_ids_list:
                 cluster = ScanDataObj.get_scan_data(self.file_name).get_cluster(cluster_id)
+                if not cluster:
+                    self.clusters_ids_list.remove(cluster_id)
+                    continue
                 debug_report(f'1) before update min_max is: {self.min_max_coords_of_clusters }',debug)
                 debug_report(f'and input_coords_list = {cluster.spots_coords_list}',debug)
                 self.min_max_coords_of_clusters = CommonFunctions.find_min_max_coords(
@@ -845,7 +848,7 @@ start x,y: {(self.start_x, self.start_y)}, backup start x,y: {(self.backup_start
             debug)
 
         # fixme: fix this shit!!!
-        if self.row_number > 10:
+        if self.row_number > 2:
             self.reset_block_start_end_coords((self.start_x-200, self.start_y), [self.end_x+200, self.end_y], debug=False)
             self.add_cropped_images()
 

@@ -244,6 +244,28 @@ class Cluster:
         self.fill_the_rest()
         self.add_spots_coords_in_block(debug=debug)
 
+    def merge_spots(self, other_cluster_id, debug=False):
+        # debug = True
+        data_obj = ScanDataObj.get_scan_data(self.file_name)
+        other_cluster = data_obj.get_cluster(other_cluster_id)
+
+        debug_report(
+            f'**running merge_spots for cluster{self.cluster_id} with other_cluster_id={other_cluster_id}({type(other_cluster_id)})', debug)
+
+        other_spot_coords = other_cluster.spots_coords_list.copy()
+
+
+        for spot in self.spots_coords_list.copy():
+            other_cluster.spots_coords_list.append(spot)
+            debug_report(f'added a new spot->{spot}', debug)
+
+        other_cluster.spots_coords_list = sorted(other_cluster.spots_coords_list, key=lambda x: x[0])
+        debug_report(f'Final coords: {other_cluster.spots_coords_list}', debug)
+
+        other_cluster.fill_the_rest()
+        other_cluster.add_spots_coords_in_block(debug=debug)
+        data_obj.delete_cluster(self.cluster_id)
+
     def change_radius_of_spot(self, spot_ind, r_change, debug=False):
         debug_report(
             f'running change_radius_of_spot for cluster{self.cluster_id} with spots_coords_list={self.spots_coords_list}',
@@ -392,6 +414,18 @@ class Cluster:
                     #     block.min_max_coords_of_clusters['max_x'] -= 10
                     # if spot == 0 and a[0] == block.min_max_coords_of_clusters['min_x']:
                     #     block.min_max_coords_of_clusters['min_x'] += 10
+            elif action == "merge":
+                if not self.already_restored:
+                    self.restore_coords_backup_and_more(debug=debug)
+                    self.already_restored = True
+
+                other_cluster_id = params['other_cluster_id']
+                self.merge_spots(other_cluster_id, debug=debug)
+                block = data_obj.get_block(block_id=self.block_id)
+                block.clusters_ids_list.remove(self.cluster_id)
+                data_obj.delete_cluster(self.cluster_id)
+                debug_report(f'just deleted the whole cluster...', debug)
+                continue
 
             # TODO: this line runs two times....
             debug_report(f'Coords after {command}: {self.spots_coords_list}', debug)
