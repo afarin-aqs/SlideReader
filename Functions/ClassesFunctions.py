@@ -256,6 +256,7 @@ def connect_clusters_to_blocks(file_name, debug=False, plot_images=False, debug_
 
 
 #%%
+
 def load_block_related_images(file_name, debug=False, plot_images=False):
     data_obj = ScanDataObj.get_scan_data(file_name)
     block_ids_list = data_obj.blocks_dict.keys()
