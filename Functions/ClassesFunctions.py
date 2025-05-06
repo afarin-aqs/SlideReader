@@ -37,11 +37,15 @@ def create_new_block(file_name, block_id, init_offset=None, block_distance_adjus
 def init_blocks_dict(file_name, init_offset=None, block_size_adjustment=0, debug_block_ids=None,
                      block_distance_adjustment=None, debug=False, plot_blocks=False):
     debug_report(f'** running "init_blocks_dict"', debug)
-    block_ids_for_plot = ['r0c0', 'r0c3', 'r2c0', 'r2c3', 'r4c0', 'r4c3']
+    data_obj = ScanDataObj.get_scan_data(file_name)
+
+    if data_obj.assay == 'SD4':
+        block_ids_for_plot = ['r0c0', 'r0c3', 'r2c0', 'r2c3', 'r4c0', 'r4c3']
+    else:
+        block_ids_for_plot = ['r0c0', 'r0c2', 'r1c1', 'r2c0', 'r2c3']
     if debug_block_ids is None:
         debug_block_ids = []
 
-    data_obj = ScanDataObj.get_scan_data(file_name)
     data_obj.reset_blocks_dict()
     data_obj.block_size += int(block_size_adjustment)
     if block_distance_adjustment is None:
