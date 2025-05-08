@@ -86,7 +86,7 @@ class ScanData:
             if self.scan_size == 10:
                 self.block_size = 450
             elif self.scan_size == 5:
-                self.block_size = 900
+                self.block_size = 950
         elif self.assay == 'SD4':
             self.block_ncol = 4
             self.block_nrow = 16
@@ -266,7 +266,7 @@ def get_block_image(file_name, block_id, image_tag=None):
         print(f'file_name {file_name} is not in the dict!!!')
         return None
     if block_id not in images_dict[file_name]:
-        print(f'{block_id} is not here... :| !!!')
+        print(f'block_id{block_id} is not in images_dict... :| !!!')
         return None
     block_images = images_dict[file_name][block_id]
     if image_tag not in block_images:

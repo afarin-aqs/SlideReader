@@ -89,10 +89,11 @@ class Block:
         if not block_distance_adjustment:
             block_distance_adjustment = [0,0]
 
-        # # correct the x and y:
+        # need to correct the x and y:
         # block_distance_adjustment = block_distance_adjustment[::-1]
         # block_size_adjustment = block_size_adjustment[::-1]
         # init_offset = init_offset[::-1]
+
 
         data_obj = ScanDataObj.get_scan_data(self.file_name)
         scan_size = data_obj.scan_size
@@ -106,8 +107,8 @@ class Block:
             offset = [10,100]
 
         elif scan_size == 5 and block_ncol == 3:
-            distance = [645,985]
-            offset = [310,480]
+            distance = [700,880]
+            offset = [40,480]
 
         elif scan_size == 5 and block_ncol == 4:
             distance = [90,45]
@@ -847,10 +848,10 @@ start x,y: {(self.start_x, self.start_y)}, backup start x,y: {(self.backup_start
             f'** running find_pattern_in_a_block for block{self.block_id} --- input move_match={move_match}',
             debug)
 
-        # fixme: fix this shit!!!
-        if self.row_number > 2:
-            self.reset_block_start_end_coords((self.start_x-200, self.start_y), [self.end_x+200, self.end_y], debug=False)
-            self.add_cropped_images()
+        # # fixme: fix this shit!!!
+        # if self.row_number > 2:
+        #     self.reset_block_start_end_coords((self.start_x-200, self.start_y), [self.end_x+200, self.end_y], debug=False)
+        #     self.add_cropped_images()
 
         image = ScanDataObj.get_block_image(file_name=self.file_name, block_id=self.block_id, image_tag='image')
         processed_image = CommonFunctions.image_preprocessing(input_image=image, params=preprocess_params)

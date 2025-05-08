@@ -39,10 +39,6 @@ def init_blocks_dict(file_name, init_offset=None, block_size_adjustment=0, debug
     debug_report(f'** running "init_blocks_dict"', debug)
     data_obj = ScanDataObj.get_scan_data(file_name)
 
-    if data_obj.assay == 'SD4':
-        block_ids_for_plot = ['r0c0', 'r0c3', 'r2c0', 'r2c3', 'r4c0', 'r4c3']
-    else:
-        block_ids_for_plot = ['r0c0', 'r0c2', 'r1c1', 'r2c0', 'r2c3']
     if debug_block_ids is None:
         debug_block_ids = []
 
@@ -57,7 +53,7 @@ def init_blocks_dict(file_name, init_offset=None, block_size_adjustment=0, debug
             debug_block = True if debug or block_id in debug_block_ids else False
             block = create_new_block(file_name=file_name, block_id=block_id, debug=debug_block,
                                      init_offset=init_offset, block_distance_adjustment=block_distance_adjustment)
-            if plot_blocks and debug_block and block_id in block_ids_for_plot:
+            if plot_blocks and debug_block:
                 block.plot_block(debug=debug_block, fig_size=[5,5])
             data_obj.add_new_block_to_dict(block)
     ScanDataObj.update_scan_data_dict(data_obj)
@@ -303,25 +299,22 @@ def read_scan_data_from_pickle(file_name, path, start_over=False, plot_results=F
 
 
 #%%
-def plot_blocks_on_image(file_name, debug=False):
+def plot_blocks_on_image(file_name, blocks_ids_lists=None, debug=False):
     data_obj = ScanDataObj.get_scan_data(file_name)
     blocks_ids_lists = list(data_obj.get_blocks_dict().keys())
     input_image = deepcopy(ScanDataObj.get_image_from_dict(file_name=file_name, dict_key='file_image'))
-
+    h, w = input_image.shape
 
     if data_obj.assay == 'OF':
-        borders_image = deepcopy(input_image)
+        borders_image = deepcopy(input_image)[:h//2,:]
+        block_ids_for_plot = ['r0c0', 'r0c2', 'r1c1', 'r2c0', 'r2c2',]
 
     else:
-        h, w = input_image.shape
         borders_image = deepcopy(input_image)[:h//3,:]
-        blocks_ids_lists = blocks_ids_lists[: len(blocks_ids_lists) // 3]
-
-
-    block_ids_for_plot = ['r0c0', 'r0c3', 'r2c0', 'r2c3', 'r4c0', 'r4c3']
-    for block_id in blocks_ids_lists:
-        if block_id not in block_ids_for_plot:
-            continue
+        block_ids_for_plot = ['r0c0', 'r0c3', 'r2c0', 'r2c3', 'r4c0', 'r4c3']
+    if blocks_ids_lists:
+        block_ids_for_plot = blocks_ids_lists
+    for block_id in block_ids_for_plot:
         block = data_obj.get_block(block_id)
         cv2.rectangle(borders_image, (block.start_x, block.start_y), (block.end_x, block.end_y), (0, 0, 0), 10)
         cv2.putText(borders_image, block_id, (block.start_x + 10, block.start_y + 50), cv2.FONT_HERSHEY_SIMPLEX, 10,
@@ -653,8 +646,8 @@ def do_final_results_plot(file_name, block_ids_list, picture=None, debug=False, 
             bottom = CommonFunctions.pad_and_concat_images(p3, p4, axis=1)
             combined_image = CommonFunctions.pad_and_concat_images(top, bottom, axis=1)
         elif block_ncol == 3:
-            col_one = CommonFunctions.pad_and_concat_images(p1, p2, axis=0)
-            combined_image = CommonFunctions.pad_and_concat_images(col_one, p3, axis=0)
+            temp = CommonFunctions.pad_and_concat_images(p1, p2, axis=1)
+            combined_image = CommonFunctions.pad_and_concat_images(temp, p3, axis=1)
         #             row_m_one = CommonFunctions.pad_and_concat_images(p1, p2, axis=1)
         #             combined_image = CommonFunctions.pad_and_concat_images(row_m_one, p3, axis=1)
         CommonFunctions.display_in_console(combined_image, fig_size=fig_size)
