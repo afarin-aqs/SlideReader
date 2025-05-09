@@ -1,7 +1,7 @@
 from importlib import reload
 import numpy as np
 import pandas as pd
-pd.set_option("future.no_silent_downcasting", True)
+# pd.set_option("future.no_silent_downcasting", True)
 import cv2
 from copy import deepcopy
 import traceback
