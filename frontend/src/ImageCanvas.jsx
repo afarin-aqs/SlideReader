@@ -1,0 +1,200 @@
+import React, { useRef, useState, useEffect } from "react";
+
+const ImageCanvas = ({ imageSrc, circles, setCircles }) => {
+  const containerRef = useRef(null);
+  const [scale, setScale] = useState(1);
+  const [translate, setTranslate] = useState({ x: 0, y: 0 });
+  const [isPanning, setIsPanning] = useState(false);
+  const [startPan, setStartPan] = useState({ x: 0, y: 0 });
+  const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
+
+  useEffect(() => {
+    const img = new Image();
+    img.onload = () => {
+      const width = img.width;
+      const height = img.height;
+      const containerWidth = containerRef.current.offsetWidth;
+      const scaleFactor = containerWidth / width;
+
+      setImageSize({ width, height });
+      setScale(scaleFactor);
+      setTranslate({ x: 0, y: 0 });
+    };
+    img.src = imageSrc;
+  }, [imageSrc]);
+
+  useEffect(() => {
+    const ref = containerRef.current;
+    const handleWheel = (e) => {
+      e.preventDefault();
+
+      const zoomIntensity = 0.001;
+      const delta = -e.deltaY;
+      const newScale = Math.min(
+        Math.max(scale + delta * zoomIntensity, 0.1),
+        10,
+      );
+
+      const rect = ref.getBoundingClientRect();
+      const offsetX = e.clientX - rect.left;
+      const offsetY = e.clientY - rect.top;
+
+      const dx = offsetX - translate.x;
+      const dy = offsetY - translate.y;
+
+      const newTranslate = {
+        x: offsetX - (dx * newScale) / scale,
+        y: offsetY - (dy * newScale) / scale,
+      };
+
+      setScale(newScale);
+      setTranslate(newTranslate);
+    };
+
+    ref.addEventListener("wheel", handleWheel, { passive: false });
+    return () => ref.removeEventListener("wheel", handleWheel);
+  }, [scale, translate]);
+
+  const handleMouseDown = (e) => {
+    if (e.target.tagName !== "circle" && e.target.tagName !== "rect") {
+      setIsPanning(true);
+      setStartPan({ x: e.clientX, y: e.clientY });
+    }
+  };
+
+  const handleMouseMove = (e) => {
+    if (!isPanning) return;
+    const dx = e.clientX - startPan.x;
+    const dy = e.clientY - startPan.y;
+    setTranslate((prev) => ({ x: prev.x + dx, y: prev.y + dy }));
+    setStartPan({ x: e.clientX, y: e.clientY });
+  };
+
+  const handleMouseUp = () => {
+    setIsPanning(false);
+  };
+
+  const handleCircleDrag = (e, circle) => {
+    e.stopPropagation();
+    const startX = e.clientX;
+    const startY = e.clientY;
+
+    const initialCx = circle.cx;
+    const initialCy = circle.cy;
+
+    const onMouseMove = (moveEvent) => {
+      const dx = (moveEvent.clientX - startX) / scale;
+      const dy = (moveEvent.clientY - startY) / scale;
+
+      setCircles((prev) =>
+        prev.map((c) =>
+          c.id === circle.id
+            ? { ...c, cx: initialCx + dx, cy: initialCy + dy }
+            : c,
+        ),
+      );
+    };
+
+    const onMouseUp = () => {
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup", onMouseUp);
+    };
+
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseup", onMouseUp);
+  };
+
+  const handleResizeDrag = (e, circle) => {
+    e.stopPropagation();
+    const startX = e.clientX;
+
+    const onMouseMove = (moveEvent) => {
+      const dx = (moveEvent.clientX - startX) / scale;
+      const newRadius = Math.max(3, circle.r + dx);
+      setCircles((prev) =>
+        prev.map((c) => (c.id === circle.id ? { ...c, r: newRadius } : c)),
+      );
+    };
+
+    const onMouseUp = () => {
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup", onMouseUp);
+    };
+
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseup", onMouseUp);
+  };
+
+  const handleReset = () => {
+    const containerWidth = containerRef.current.offsetWidth;
+    const scaleFactor = containerWidth / imageSize.width;
+
+    setScale(scaleFactor);
+    setTranslate({ x: 0, y: 0 });
+  };
+
+  return (
+    <div
+      ref={containerRef}
+      onMouseDown={handleMouseDown}
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
+      style={{
+        width: "100%",
+        height: "100%",
+        overflow: "hidden",
+        position: "relative",
+      }}
+    >
+      <svg
+        width={imageSize.width}
+        height={imageSize.height}
+        style={{
+          transform: `translate(${translate.x}px, ${translate.y}px) scale(${scale})`,
+          transformOrigin: "0 0",
+        }}
+      >
+        <image
+          href={imageSrc}
+          x="0"
+          y="0"
+          width={imageSize.width}
+          height={imageSize.height}
+        />
+        {circles.map((c) => (
+          <g key={c.id}>
+            <circle
+              cx={c.cx}
+              cy={c.cy}
+              r={c.r}
+              stroke="red"
+              strokeWidth="3"
+              fill="transparent"
+              onMouseDown={(e) => handleCircleDrag(e, c)}
+              style={{ cursor: "move" }}
+            />
+            <rect
+              x={c.cx + c.r - 4}
+              y={c.cy - 4}
+              width={8}
+              height={8}
+              fill="red"
+              style={{ cursor: "ew-resize" }}
+              onMouseDown={(e) => handleResizeDrag(e, c)}
+            />
+          </g>
+        ))}
+      </svg>
+
+      <button
+        onClick={handleReset}
+        className="btn btn-outline-secondary"
+        style={{ position: "absolute", top: 10, right: 10, zIndex: 10 }}
+      >
+        Reset View
+      </button>
+    </div>
+  );
+};
+
+export default ImageCanvas;
