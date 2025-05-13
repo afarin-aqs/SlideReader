@@ -1,0 +1,34 @@
+import React, { createContext, useState, useContext } from "react";
+
+const ParamsContext = createContext();
+
+const defaultParams = {
+  scan_size: 5,
+  assay: "OF",
+  cAb_names: [],
+  blur_kernel_size: 9,
+  contrast_thr: 200,
+  canny_edge_thr1: 90,
+  canny_edge_thr2: 290,
+  dp: 10,
+  param1: 11,
+  param2: 22,
+  minRadius: 11,
+  maxRadius: 18,
+  eps: 500,
+  x_power: 3,
+  y_power: 5,
+  min_samples: 3,
+};
+
+export const ParamsProvider = ({ children }) => {
+  const [params, setParams] = useState(defaultParams);
+
+  return (
+    <ParamsContext.Provider value={{ params, setParams }}>
+      {children}
+    </ParamsContext.Provider>
+  );
+};
+
+export const useParams = () => useContext(ParamsContext);
