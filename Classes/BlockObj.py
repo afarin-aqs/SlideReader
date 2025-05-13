@@ -1365,8 +1365,7 @@ start x,y: {(self.start_x, self.start_y)}, backup start x,y: {(self.backup_start
 
         # block_intensities_df['F_B_PostProcess'] = block_intensities_df['F_B_PostProcess'].replace('', np.nan)
         block_intensities_df['F_B_PostProcess'] = block_intensities_df['F_B_PostProcess'].replace('',
-                                                                                                  np.nan).infer_objects(
-            copy=False)
+                                                                                                  np.nan).infer_objects()
 
         block_intensities_df['F_B_PostProcess'] = block_intensities_df['F_B_PostProcess'].astype('float').astype(
             pd.UInt16Dtype(), errors='ignore')
