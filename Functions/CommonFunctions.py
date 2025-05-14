@@ -255,6 +255,9 @@ def circle_detection(input_image, detection_params, preprocess_params=None, debu
             sorted_circles = find_circles_with_hough_transform(preprocessed_image, detection_params, debug, plot_images)
         elif 'contour' in method.lower():
             sorted_circles = find_circles_with_contour_detection(preprocessed_image, detection_params)
+        elif 'hdb' in method.lower():
+            sorted_circles = find_circles_with_hdbscan(preprocessed_image, detection_params, debug, plot_images)
+
         debug_report(f'found {len(sorted_circles)} circles', debug)
         return sorted_circles
     except Exception as e:
@@ -359,6 +362,68 @@ def find_circles_with_contour_detection(input_image, params, plot_images=False, 
         return sorted_circles
 
     show_circles_on_plot(input_image, circles_vec=sorted_circles, debug=debug)
+    return sorted_circles
+def find_circles_with_hdbscan(input_image, params, plot_images=False, debug=False):
+    debug_report(f'running find_circles_with_hdbscan function', debug)
+    
+    # Convert binary image to points
+    points = np.column_stack(np.where(input_image > 0))
+    
+    if len(points) == 0:
+        debug_report("No points found in the image.", debug)
+        return []
+    
+    # Initialize HDBSCAN
+    clusterer = hdbscan.HDBSCAN(
+        min_cluster_size=params.get('min_cluster_size', 5),
+        min_samples=params.get('min_samples', 3),
+        metric='euclidean'
+    )
+    
+    # Fit and predict clusters
+    cluster_labels = clusterer.fit_predict(points)
+    
+    circles = []
+    unique_labels = np.unique(cluster_labels)
+    
+    for label in unique_labels:
+        if label == -1:  # Skip noise points
+            continue
+            
+        # Get points in this cluster
+        cluster_points = points[cluster_labels == label]
+        
+        if len(cluster_points) < params.get('min_arc_length', 5):
+            continue
+            
+        # Calculate center and radius using minimum enclosing circle
+        center, radius = cv2.minEnclosingCircle(cluster_points)
+        
+        # Apply radius constraints
+        if radius < params.get('minRadius', 0) or radius > params.get('maxRadius', float('inf')):
+            continue
+            
+        # Add radius padding if specified
+        r_plus = params.get('r_plus', 0)
+        
+        circles.append(np.array([np.ceil(center[1]), np.ceil(center[0]), np.ceil(radius + r_plus)], dtype=np.int16))
+        debug_report(f'Circle detected: {(center[1], center[0], radius)}', debug)
+    
+    if not circles:
+        debug_report("No circles were detected.", debug)
+        return []
+        
+    # Sort circles by y-coordinate, then x-coordinate
+    circles = np.array(circles)
+    sorted_indices = np.lexsort((circles[:, 0], circles[:, 1]))
+    sorted_circles = circles[sorted_indices]
+    
+    debug_report(f'found {len(sorted_circles)} circles with HDBSCAN', debug)
+    debug_report(f'**added {r_plus} to the radius of each circle**', debug & r_plus > 0)
+    
+    if plot_images:
+        show_circles_on_plot(input_image, circles_vec=sorted_circles, debug=debug)
+        
     return sorted_circles
 
 
