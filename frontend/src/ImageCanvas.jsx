@@ -133,6 +133,19 @@ const ImageCanvas = ({ imageSrc, circles, setCircles }) => {
     setTranslate({ x: 0, y: 0 });
   };
 
+  const getClusterColor = (() => {
+    const cache = {};
+    return (clusterId) => {
+      if (clusterId === -1) return "gray";
+      if (cache[clusterId]) return cache[clusterId];
+
+      const hue = (clusterId * 137) % 360;
+      const color = `hsl(${hue}, 70%, 50%)`;
+      cache[clusterId] = color;
+      return color;
+    };
+  })();
+
   return (
     <div
       ref={containerRef}
@@ -161,29 +174,53 @@ const ImageCanvas = ({ imageSrc, circles, setCircles }) => {
           width={imageSize.width}
           height={imageSize.height}
         />
-        {circles.map((c) => (
-          <g key={c.id}>
-            <circle
-              cx={c.cx}
-              cy={c.cy}
-              r={c.r}
-              stroke="red"
-              strokeWidth="3"
-              fill="transparent"
-              onMouseDown={(e) => handleCircleDrag(e, c)}
-              style={{ cursor: "move" }}
-            />
-            <rect
-              x={c.cx + c.r - 4}
-              y={c.cy - 4}
-              width={8}
-              height={8}
-              fill="red"
-              style={{ cursor: "ew-resize" }}
-              onMouseDown={(e) => handleResizeDrag(e, c)}
-            />
-          </g>
-        ))}
+        {circles.map((c) => {
+          const color = getClusterColor(c.cluster);
+          return (
+            <g key={c.id}>
+              <circle
+                cx={c.cx}
+                cy={c.cy}
+                r={c.r}
+                stroke={color}
+                strokeWidth="3"
+                fill="transparent"
+                onMouseDown={(e) => handleCircleDrag(e, c)}
+                style={{ cursor: "move" }}
+                onMouseEnter={() => {
+                  const text = document.getElementById(`cluster-label-${c.id}`);
+                  if (text) text.style.display = "block";
+                }}
+                onMouseLeave={() => {
+                  const text = document.getElementById(`cluster-label-${c.id}`);
+                  if (text) text.style.display = "none";
+                }}
+              />
+              <rect
+                x={c.cx + c.r - 4}
+                y={c.cy - 4}
+                width={8}
+                height={8}
+                fill={color}
+                style={{ cursor: "ew-resize" }}
+                onMouseDown={(e) => handleResizeDrag(e, c)}
+              />
+              {c.cluster !== -1 && (
+                <text
+                  id={`cluster-label-${c.id}`}
+                  x={c.cx + c.r + 10}
+                  y={c.cy}
+                  fontSize="24"
+                  fill={color}
+                  display="none"
+                  style={{ display: "none", pointerEvents: "none" }}
+                >
+                  {c.cluster}
+                </text>
+              )}
+            </g>
+          );
+        })}
       </svg>
 
       <button
