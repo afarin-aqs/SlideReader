@@ -41,45 +41,6 @@ const App = () => {
             <>
               {/* ParamEditor */}
               <ParamEditor />
-
-              <hr className="my-3" />
-
-              {/* Circles Info Accordion */}
-              <div className="accordion" id="circlesAccordion">
-                <div className="accordion-item">
-                  <h2 className="accordion-header" id="headingCircles">
-                    <button
-                      className="accordion-button"
-                      type="button"
-                      data-bs-toggle="collapse"
-                      data-bs-target="#collapseCircles"
-                      aria-expanded="true"
-                      aria-controls="collapseCircles"
-                    >
-                      Detected Circles
-                    </button>
-                  </h2>
-                  <div
-                    id="collapseCircles"
-                    className="accordion-collapse collapse show"
-                    aria-labelledby="headingCircles"
-                    data-bs-parent="#circlesAccordion"
-                  >
-                    <div className="accordion-body">
-                      {circles.map((c) => (
-                        <div key={c.id} className="mb-3 p-2 border rounded">
-                          <div>
-                            <strong>Circle {c.id}</strong>
-                          </div>
-                          <div>X: {Math.round(c.cx)}</div>
-                          <div>Y: {Math.round(c.cy)}</div>
-                          <div>Radius: {Math.round(c.r)}</div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
             </>
           )}
         </div>
