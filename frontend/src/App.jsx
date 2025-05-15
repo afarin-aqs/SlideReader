@@ -13,6 +13,7 @@ const App = () => {
   const [stage, setStage] = useState(STAGES.UPLOAD);
   const [previewImage, setPreviewImage] = useState(null);
   const [clusterMode, setClusterMode] = useState(false);
+  const [testImage, setTestImage] = useState(null);
 
   const [circles, setCircles] = useState([
     { id: 1, cx: 400, cy: 1000, r: 80, cluster: 1 },
@@ -66,7 +67,7 @@ const App = () => {
                   Next: Edit Circles
                 </button>
               </div>
-              <ParamEditor />
+              <ParamEditor onImageFetched={setTestImage} setCircles={setCircles} />
             </>
           )}
 
@@ -107,6 +108,13 @@ const App = () => {
               circles={circles}
               setCircles={setCircles}
               clusterMode={clusterMode}
+            />
+          ) : stage === STAGES.PARAMS && testImage ? (
+            <ImageCanvas
+              imageSrc={testImage}
+              circles={circles}
+              setCircles={() => {}}
+              clusterMode={false}
             />
           ) : (
             <div
