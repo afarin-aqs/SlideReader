@@ -17,7 +17,7 @@ const ImageUploader = ({ onImageUploaded }) => {
 
     try {
       const response = await axios.post(
-        "http://127.0.0.1:5000/convert-tif-to-png",
+        "http://127.0.0.1:5000/prep-image",
         formData,
       );
       const imageBase64 = response.data.image;
