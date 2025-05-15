@@ -3,8 +3,14 @@ import ImageUploader from "./ImageUploader.jsx";
 import ParamEditor from "./ParamEditor.jsx";
 import ImageCanvas from "./ImageCanvas.jsx";
 
+const STAGES = {
+  UPLOAD: "upload image",
+  PARAMS: "tune parameters",
+  EDIT: "edit circles",
+};
+
 const App = () => {
-  const [imageUploaded, setImageUploaded] = useState(false);
+  const [stage, setStage] = useState(STAGES.UPLOAD);
   const [previewImage, setPreviewImage] = useState(null);
   const [clusterMode, setClusterMode] = useState(false);
 
@@ -22,8 +28,17 @@ const App = () => {
   ]);
 
   const handleImageUploaded = (imageData) => {
-    setImageUploaded(true);
     setPreviewImage(imageData);
+    setStage(STAGES.PARAMS);
+  };
+
+  const handleNext = () => {
+    if (stage === STAGES.PARAMS) setStage(STAGES.EDIT);
+  };
+
+  const handleBack = () => {
+    if (stage === STAGES.PARAMS) setStage(STAGES.UPLOAD);
+    else if (stage === STAGES.EDIT) setStage(STAGES.PARAMS);
   };
 
   return (
@@ -37,24 +52,43 @@ const App = () => {
             overflowY: "auto",
           }}
         >
-          <ImageUploader onImageUploaded={handleImageUploaded} />
-          <div className="form-check my-3">
-            <input
-              className="form-check-input"
-              type="checkbox"
-              id="clusterMode"
-              checked={clusterMode}
-              onChange={(e) => setClusterMode(e.target.checked)}
-            />
-            <label className="form-check-label" htmlFor="clusterMode">
-              Cluster Mode
-            </label>
-          </div>
+          {stage === STAGES.UPLOAD && (
+            <ImageUploader onImageUploaded={handleImageUploaded} />
+          )}
 
-          {imageUploaded && (
+          {stage === STAGES.PARAMS && (
             <>
-              {/* ParamEditor */}
+              <div className="d-flex gap-2 mt-3">
+                <button className="btn btn-secondary" onClick={handleBack}>
+                  Back
+                </button>
+                <button className="btn btn-primary" onClick={handleNext}>
+                  Next: Edit Circles
+                </button>
+              </div>
               <ParamEditor />
+            </>
+          )}
+
+          {stage === STAGES.EDIT && (
+            <>
+              <div className="d-flex gap-2 mt-3">
+                <button className="btn btn-secondary" onClick={handleBack}>
+                  Back
+                </button>
+              </div>
+              <div className="form-check my-3">
+                <input
+                  className="form-check-input"
+                  type="checkbox"
+                  id="clusterMode"
+                  checked={clusterMode}
+                  onChange={(e) => setClusterMode(e.target.checked)}
+                />
+                <label className="form-check-label" htmlFor="clusterMode">
+                  Cluster Mode
+                </label>
+              </div>
             </>
           )}
         </div>
@@ -67,7 +101,7 @@ const App = () => {
             overflowY: "auto",
           }}
         >
-          {previewImage ? (
+          {stage === STAGES.EDIT ? (
             <ImageCanvas
               imageSrc={previewImage}
               circles={circles}
