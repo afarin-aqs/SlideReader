@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect } from "react";
 
-const ImageCanvas = ({ imageSrc, circles, setCircles }) => {
+const ImageCanvas = ({ imageSrc, circles, setCircles, clusterMode }) => {
   const containerRef = useRef(null);
   const [scale, setScale] = useState(1);
   const [translate, setTranslate] = useState({ x: 0, y: 0 });
@@ -79,8 +79,14 @@ const ImageCanvas = ({ imageSrc, circles, setCircles }) => {
     const startX = e.clientX;
     const startY = e.clientY;
 
-    const initialCx = circle.cx;
-    const initialCy = circle.cy;
+    const initialPositions = {};
+    circles.forEach((c) => {
+      if (clusterMode && c.cluster === circle.cluster) {
+        initialPositions[c.id] = { cx: c.cx, cy: c.cy };
+      } else if (!clusterMode && c.id === circle.id) {
+        initialPositions[c.id] = { cx: c.cx, cy: c.cy };
+      }
+    });
 
     const onMouseMove = (moveEvent) => {
       const dx = (moveEvent.clientX - startX) / scale;
@@ -88,8 +94,12 @@ const ImageCanvas = ({ imageSrc, circles, setCircles }) => {
 
       setCircles((prev) =>
         prev.map((c) =>
-          c.id === circle.id
-            ? { ...c, cx: initialCx + dx, cy: initialCy + dy }
+          initialPositions[c.id]
+            ? {
+                ...c,
+                cx: initialPositions[c.id].cx + dx,
+                cy: initialPositions[c.id].cy + dy,
+              }
             : c,
         ),
       );
@@ -108,11 +118,24 @@ const ImageCanvas = ({ imageSrc, circles, setCircles }) => {
     e.stopPropagation();
     const startX = e.clientX;
 
+    const initialRadii = {};
+    circles.forEach((c) => {
+      if (clusterMode && c.cluster === circle.cluster) {
+        initialRadii[c.id] = c.r;
+      } else if (!clusterMode && c.id === circle.id) {
+        initialRadii[c.id] = c.r;
+      }
+    });
+
     const onMouseMove = (moveEvent) => {
       const dx = (moveEvent.clientX - startX) / scale;
-      const newRadius = Math.max(3, circle.r + dx);
+
       setCircles((prev) =>
-        prev.map((c) => (c.id === circle.id ? { ...c, r: newRadius } : c)),
+        prev.map((c) =>
+          initialRadii[c.id]
+            ? { ...c, r: Math.max(3, initialRadii[c.id] + dx) }
+            : c,
+        ),
       );
     };
 

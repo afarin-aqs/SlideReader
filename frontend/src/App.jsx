@@ -6,6 +6,7 @@ import ImageCanvas from "./ImageCanvas.jsx";
 const App = () => {
   const [imageUploaded, setImageUploaded] = useState(false);
   const [previewImage, setPreviewImage] = useState(null);
+  const [clusterMode, setClusterMode] = useState(false);
 
   const [circles, setCircles] = useState([
     { id: 1, cx: 400, cy: 1000, r: 80, cluster: 1 },
@@ -37,6 +38,19 @@ const App = () => {
           }}
         >
           <ImageUploader onImageUploaded={handleImageUploaded} />
+          <div className="form-check my-3">
+            <input
+              className="form-check-input"
+              type="checkbox"
+              id="clusterMode"
+              checked={clusterMode}
+              onChange={(e) => setClusterMode(e.target.checked)}
+            />
+            <label className="form-check-label" htmlFor="clusterMode">
+              Cluster Mode
+            </label>
+          </div>
+
           {imageUploaded && (
             <>
               {/* ParamEditor */}
@@ -58,6 +72,7 @@ const App = () => {
               imageSrc={previewImage}
               circles={circles}
               setCircles={setCircles}
+              clusterMode={clusterMode}
             />
           ) : (
             <div
