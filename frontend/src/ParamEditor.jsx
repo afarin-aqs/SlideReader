@@ -17,11 +17,11 @@ const ParamEditor = () => {
       <div className="accordion-item">
         <h2 className="accordion-header" id="headingParams">
           <button
-            className="accordion-button collapsed"
+            className="accordion-button"
             type="button"
             data-bs-toggle="collapse"
             data-bs-target="#collapseParams"
-            aria-expanded="false"
+            aria-expanded="true"
             aria-controls="collapseParams"
           >
             Edit Parameters
@@ -29,7 +29,7 @@ const ParamEditor = () => {
         </h2>
         <div
           id="collapseParams"
-          className="accordion-collapse collapse"
+          className="accordion-collapse collapse show"
           aria-labelledby="headingParams"
           data-bs-parent="#paramAccordion"
         >
