@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect } from "react";
 
 const ImageCanvas = ({ imageSrc, circles, setCircles, clusterMode }) => {
   const containerRef = useRef(null);

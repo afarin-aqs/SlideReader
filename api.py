@@ -5,8 +5,8 @@ import base64
 from flask_cors import CORS
 from copy import deepcopy
 
-from Functions.CommonFunctions import give_scaled_log_image, test_current_parameters
-from Classes.ScanDataObj import create_new_scan_data, init_or_reset_params
+from Functions import CommonFunctions
+from Classes import ScanDataObj
 
 app = Flask(__name__)
 CORS(app)
@@ -20,9 +20,7 @@ data = {
 
 @app.route("/prep-image", methods=["POST"])
 def scale_log_convert_image():
-    """Log and normalize image, then convert tif to png
-       Also initializes a ScanDataObj and saves image for future use
-    """
+    """Log and normalize image, then convert tif to png"""
     if "image" not in request.files:
         return jsonify({"error": "No image provided"}), 400
 
@@ -36,7 +34,7 @@ def scale_log_convert_image():
     data["image"] = image
     data["current_filename"] = file.filename
 
-    image = give_scaled_log_image(image)
+    image = CommonFunctions.give_scaled_log_image(image)
 
     success, encoded_image = cv2.imencode(".png", image)
     if not success:
@@ -51,7 +49,7 @@ def scale_log_convert_image():
 def set_params():
     """Set params"""
     params = request.get_json()
-    init_or_reset_params(
+    ScanDataObj.init_or_reset_params(
         file_name=data["current_filename"],
         input_param_dict=params
     )
@@ -71,11 +69,11 @@ def test_params():
     else:
         test_image = deepcopy(image)[500:1400, 50:2600]
 
-    circles, clusters_ids = test_current_parameters(
+    circles, clusters_ids = CommonFunctions.test_current_parameters(
         input_image=test_image, file_name=filename, plot_image=False
     )
 
-    test_image = give_scaled_log_image(test_image)
+    test_image = CommonFunctions.give_scaled_log_image(test_image)
 
     success, encoded_image = cv2.imencode(".png", test_image)
     if not success:

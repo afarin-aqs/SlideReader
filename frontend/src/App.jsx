@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import ImageUploader from "./ImageUploader.jsx";
 import ParamEditor from "./ParamEditor.jsx";
 import ImageCanvas from "./ImageCanvas.jsx";
@@ -67,7 +67,10 @@ const App = () => {
                   Next: Edit Circles
                 </button>
               </div>
-              <ParamEditor onImageFetched={setTestImage} setCircles={setCircles} />
+              <ParamEditor
+                onImageFetched={setTestImage}
+                setCircles={setCircles}
+              />
             </>
           )}
 
