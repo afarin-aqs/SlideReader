@@ -96,7 +96,7 @@ const ParamEditor = ({ onImageFetched, setCircles }) => {
 
       {message && (
         <div
-          className="alert alert-success alert-dismissible fade show position-fixed top-0 start-50 translate-middle-x mt-3"
+          className="alert alert-success alert-dismissible fade show position-fixed bottom-0 start-50 translate-middle-x mb-3"
           role="alert"
           style={{ zIndex: 100, minWidth: "300px" }}
         >
