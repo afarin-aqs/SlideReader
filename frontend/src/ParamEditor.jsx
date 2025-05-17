@@ -50,67 +50,61 @@ const ParamEditor = ({ onImageFetched, setCircles }) => {
     }
   };
 
+  const paramEntries = Object.entries(params);
+  const paramPairs = [];
+  for (let i = 0; i < paramEntries.length; i += 2) {
+    paramPairs.push(paramEntries.slice(i, i + 2));
+  }
+
   return (
-    <div className="accordion mt-3" id="paramAccordion">
-      <div className="accordion-item">
-        <h2 className="accordion-header" id="headingParams">
-          <button
-            className="accordion-button"
-            type="button"
-            data-bs-toggle="collapse"
-            data-bs-target="#collapseParams"
-            aria-expanded="true"
-            aria-controls="collapseParams"
-          >
-            Edit Parameters
-          </button>
-        </h2>
-        <div
-          id="collapseParams"
-          className="accordion-collapse collapse show"
-          aria-labelledby="headingParams"
-          data-bs-parent="#paramAccordion"
-        >
-          <div className="accordion-body">
-            {Object.entries(params).map(([key, value]) => (
-              <div className="mb-3" key={key}>
-                <label htmlFor={key} className="form-label">
-                  {key}
-                </label>
-                <input
-                  type={typeof value === "number" ? "number" : "text"}
-                  className="form-control"
-                  step="any"
-                  name={key}
-                  id={key}
-                  value={value}
-                  onChange={handleChange}
-                />
-              </div>
-            ))}
-
-            <button className="btn btn-primary mt-3" onClick={handleSave}>
-              Save Parameters
-            </button>
-
-            {message && (
-              <div
-                className="alert alert-success alert-dismissible fade show position-fixed top-0 start-50 translate-middle-x mt-3"
-                role="alert"
-                style={{ zIndex: 100, minWidth: "300px" }}
+    <div className="p-3">
+      {paramPairs.map((pair, rowIndex) => (
+        <div className="row mb-3" key={rowIndex}>
+          {pair.map(([key, value], colIndex) => (
+            <div className="col-6" key={key}>
+              <label
+                htmlFor={key}
+                className={`form-label d-block ${
+                  colIndex === 0 ? "text-start" : "text-end"
+                }`}
               >
-                {message}
-                <button
-                  type="button"
-                  className="btn-close"
-                  aria-label="Close"
-                  onClick={() => setMessage(null)}
-                ></button>
-              </div>
-            )}
-          </div>
+                {key}
+              </label>
+              <input
+                type={typeof value === "number" ? "number" : "text"}
+                className="form-control form-control-sm"
+                step="any"
+                name={key}
+                id={key}
+                value={value}
+                onChange={handleChange}
+              />
+            </div>
+          ))}
         </div>
+      ))}
+
+      <div className="d-flex justify-content-center mt-3">
+        <button className="btn btn-primary" onClick={handleSave}>
+          Save Parameters
+        </button>
       </div>
+
+      {message && (
+        <div
+          className="alert alert-success alert-dismissible fade show position-fixed top-0 start-50 translate-middle-x mt-3"
+          role="alert"
+          style={{ zIndex: 100, minWidth: "300px" }}
+        >
+          {message}
+          <button
+            type="button"
+            className="btn-close"
+            aria-label="Close"
+            onClick={() => setMessage(null)}
+          ></button>
+        </div>
+      )}
     </div>
   );
 };
