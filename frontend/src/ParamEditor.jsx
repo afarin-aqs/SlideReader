@@ -1,10 +1,14 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import axios from "axios";
 import { useParams } from "./ParamsContext.jsx";
 
 const ParamEditor = ({ onImageFetched, setCircles }) => {
   const { params, setParams } = useParams();
   const [message, setMessage] = useState(null);
+
+  useEffect(() => {
+    syncParamsAndFetchImage();
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -14,7 +18,7 @@ const ParamEditor = ({ onImageFetched, setCircles }) => {
     }));
   };
 
-  const handleSave = async () => {
+  const syncParamsAndFetchImage = async () => {
     try {
       const response = await axios.post(
         "http://127.0.0.1:5000/set-params",
@@ -85,7 +89,7 @@ const ParamEditor = ({ onImageFetched, setCircles }) => {
       ))}
 
       <div className="d-flex justify-content-center mt-3">
-        <button className="btn btn-primary" onClick={handleSave}>
+        <button className="btn btn-primary" onClick={syncParamsAndFetchImage}>
           Save Parameters
         </button>
       </div>
