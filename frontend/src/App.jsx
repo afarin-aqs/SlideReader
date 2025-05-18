@@ -18,18 +18,8 @@ const App = () => {
   const [clusterMode, setClusterMode] = useState(false);
   const [testImage, setTestImage] = useState(null);
 
-  const [circles, setCircles] = useState([
-    { id: 1, cx: 400, cy: 1000, r: 80, cluster: 1 },
-    { id: 2, cx: 750, cy: 2000, r: 85, cluster: 1 },
-    { id: 3, cx: 1100, cy: 3000, r: 90, cluster: 1 },
-    { id: 4, cx: 1450, cy: 4000, r: 80, cluster: 2 },
-    { id: 5, cx: 1800, cy: 5000, r: 85, cluster: 2 },
-    { id: 6, cx: 2150, cy: 6000, r: 90, cluster: 2 },
-    { id: 7, cx: 2500, cy: 7000, r: 80, cluster: 3 },
-    { id: 8, cx: 2850, cy: 8000, r: 85, cluster: 3 },
-    { id: 9, cx: 3200, cy: 9000, r: 90, cluster: 3 },
-    { id: 10, cx: 3550, cy: 10000, r: 80, cluster: -1 },
-  ]);
+  // Keys: id, cx, cy, r, cluster
+  const [circles, setCircles] = useState([]);
 
   const currentStageIndex = STAGE_ORDER.indexOf(stage);
 
