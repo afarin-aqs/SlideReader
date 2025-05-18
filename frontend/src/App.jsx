@@ -1,5 +1,7 @@
 import { useState } from "react";
-import ImageUploader from "./ImageUploader.jsx";
+import axios from "axios";
+import { saveAs } from "file-saver";
+import Uploader from "./Uploader.jsx";
 import ParamEditor from "./ParamEditor.jsx";
 import BlockParamEditor from "./BlockParamEditor.jsx";
 import ImageCanvas from "./ImageCanvas.jsx";
@@ -41,6 +43,21 @@ const App = () => {
     }
   };
 
+  const handleSavePickle = async () => {
+    try {
+      const response = await axios.get("http://127.0.0.1:5000/get-pickle", {
+        responseType: "blob",
+      });
+      const disposition = response.headers["content-disposition"];
+      const match = disposition?.match(/filename="?([^"]+)"?/);
+      const filename = match?.[1] || "scan_data.pickle";
+      saveAs(response.data, filename);
+    } catch (error) {
+      console.error("Error downloading pickle file:", error);
+      alert("Failed to download pickle file.");
+    }
+  };
+
   return (
     <div className="container-fluid">
       <div className="row">
@@ -73,7 +90,7 @@ const App = () => {
           )}
 
           {stage === STAGES.UPLOAD && (
-            <ImageUploader onImageUploaded={handleImageUploaded} />
+            <Uploader onImageUploaded={handleImageUploaded} />
           )}
 
           {stage === STAGES.PARAMS && (
@@ -99,6 +116,17 @@ const App = () => {
               <label className="form-check-label" htmlFor="clusterMode">
                 Cluster Mode
               </label>
+            </div>
+          )}
+
+          {stage !== STAGES.UPLOAD && (
+            <div className="mt-3">
+              <button
+                className="btn btn-outline-success w-100"
+                onClick={handleSavePickle}
+              >
+                Save Pickle
+              </button>
             </div>
           )}
         </div>
