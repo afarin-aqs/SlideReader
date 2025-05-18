@@ -1,6 +1,7 @@
 import { useState } from "react";
 import ImageUploader from "./ImageUploader.jsx";
 import ParamEditor from "./ParamEditor.jsx";
+import BlockParamEditor from "./BlockParamEditor.jsx";
 import ImageCanvas from "./ImageCanvas.jsx";
 
 const STAGES = {
@@ -83,9 +84,7 @@ const App = () => {
           )}
 
           {stage === STAGES.BLOCK && (
-            <div className="mt-4">
-              <h5>Block Detection Parameters</h5>
-            </div>
+            <BlockParamEditor onImageFetched={setTestImage} />
           )}
 
           {stage === STAGES.EDIT && (
@@ -126,8 +125,20 @@ const App = () => {
               setCircles={() => {}}
               clusterMode={false}
             />
-          ) : stage === STAGES.BLOCK ? (
-            <p>Block Detection</p>
+          ) : stage === STAGES.BLOCK && testImage ? (
+            <div
+              style={{
+                height: "100%",
+                overflowY: "auto",
+              }}
+            >
+              <img
+                src={testImage}
+                style={{
+                  width: "100%",
+                }}
+              />
+            </div>
           ) : (
             <div
               className="text-muted d-flex justify-content-center align-items-center"
