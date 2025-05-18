@@ -18,6 +18,15 @@ data = {
 }
 
 
+def encode_image(image):
+    """Encode a cv2 image as a Base64-encoded string"""
+    success, encoded_image = cv2.imencode(".png", image)
+    if not success:
+        return False, None
+    encoded_image = base64.b64encode(encoded_image.tobytes()).decode("utf-8")
+    return True, encoded_image
+
+
 @app.route("/prep-image", methods=["POST"])
 def scale_log_convert_image():
     """Log and normalize image, then convert tif to png"""
@@ -36,11 +45,9 @@ def scale_log_convert_image():
 
     image = CommonFunctions.give_scaled_log_image(image)
 
-    success, encoded_image = cv2.imencode(".png", image)
+    success, encoded_image = encode_image(image)
     if not success:
         return jsonify({"error": "Failed to encode image"}), 500
-
-    encoded_image = base64.b64encode(encoded_image.tobytes()).decode("utf-8")
 
     return jsonify({"image": encoded_image})
 
@@ -75,10 +82,9 @@ def test_params():
 
     test_image = CommonFunctions.give_scaled_log_image(test_image)
 
-    success, encoded_image = cv2.imencode(".png", test_image)
+    success, encoded_image = encode_image(test_image)
     if not success:
         return jsonify({"error": "Failed to encode image"}), 500
-    encoded_image = base64.b64encode(encoded_image.tobytes()).decode("utf-8")
 
     return jsonify({
         "image": encoded_image,
