@@ -5,7 +5,7 @@ import base64
 from flask_cors import CORS
 from copy import deepcopy
 
-from Functions import CommonFunctions
+from Functions import CommonFunctions, ClassesFunctions
 from Classes import ScanDataObj
 
 app = Flask(__name__)
@@ -43,9 +43,20 @@ def scale_log_convert_image():
     data["image"] = image
     data["current_filename"] = file.filename
 
-    image = CommonFunctions.give_scaled_log_image(image)
+    scaled_logged_image = CommonFunctions.give_scaled_log_image(image)
 
-    success, encoded_image = encode_image(image)
+    ScanDataObj.add_to_images_dict(
+        file_name=file.filename,
+        dict_key="file_image",
+        dict_value=image
+    )
+    ScanDataObj.add_to_images_dict(
+        file_name=file.filename,
+        dict_key="file_scaled_image",
+        dict_value=scaled_logged_image
+    )
+
+    success, encoded_image = encode_image(scaled_logged_image)
     if not success:
         return jsonify({"error": "Failed to encode image"}), 500
 
@@ -91,6 +102,31 @@ def test_params():
         "circles": [circle.tolist() for circle in circles],
         "cluster_ids": clusters_ids.tolist()
     })
+
+
+@app.route("/test-block-params", methods=["POST"])
+def test_block_params():
+    """Test block params: do block detection"""
+    params = request.get_json()
+    filename = data["current_filename"]
+
+    ClassesFunctions.init_blocks_dict(
+        file_name=filename,
+        plot_blocks=False,
+        init_offset=params["init_offset"],
+        block_size_adjustment=params["block_size_adjustment"],
+        block_distance_adjustment=params["block_distance_adjustment"]
+    )
+    borders_image = ClassesFunctions.plot_blocks_on_image(
+        file_name=filename, display_in_console=False
+    )
+    scaled_logged_image = CommonFunctions.give_scaled_log_image(borders_image)
+
+    success, encoded_image = encode_image(scaled_logged_image)
+    if not success:
+        return jsonify({"error": "Failed to encode image"}), 500
+
+    return jsonify({"image": encoded_image})
 
 
 if __name__ == "__main__":

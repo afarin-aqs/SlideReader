@@ -299,7 +299,7 @@ def read_scan_data_from_pickle(file_name, path, start_over=False, plot_results=F
 
 
 #%%
-def plot_blocks_on_image(file_name, blocks_ids_lists=None, debug=False):
+def plot_blocks_on_image(file_name, blocks_ids_lists=None, debug=False, display_in_console=True):
     data_obj = ScanDataObj.get_scan_data(file_name)
     blocks_ids_lists = list(data_obj.get_blocks_dict().keys())
     input_image = deepcopy(ScanDataObj.get_image_from_dict(file_name=file_name, dict_key='file_image'))
@@ -319,7 +319,8 @@ def plot_blocks_on_image(file_name, blocks_ids_lists=None, debug=False):
         cv2.rectangle(borders_image, (block.start_x, block.start_y), (block.end_x, block.end_y), (0, 0, 0), 10)
         cv2.putText(borders_image, block_id, (block.start_x + 10, block.start_y + 50), cv2.FONT_HERSHEY_SIMPLEX, 10,
                     (255, 255, 255), 20)
-    CommonFunctions.display_in_console(borders_image)
+    if display_in_console:
+        CommonFunctions.display_in_console(borders_image)
     return borders_image
 
 
