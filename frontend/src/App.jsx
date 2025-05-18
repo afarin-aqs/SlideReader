@@ -4,10 +4,10 @@ import ParamEditor from "./ParamEditor.jsx";
 import ImageCanvas from "./ImageCanvas.jsx";
 
 const STAGES = {
-  UPLOAD: "upload image",
-  PARAMS: "tune parameters",
-  BLOCK: "detect blocks",
-  EDIT: "edit circles",
+  UPLOAD: "Upload an image",
+  PARAMS: "Tune circle/cluster params",
+  BLOCK: "Tune block detection params",
+  EDIT: "Edit circles",
 };
 
 const STAGE_ORDER = [STAGES.UPLOAD, STAGES.PARAMS, STAGES.BLOCK, STAGES.EDIT];
@@ -51,8 +51,14 @@ const App = () => {
             overflowY: "auto",
           }}
         >
+          <div className="mb-3">
+            <h6>
+              {currentStageIndex + 1}. {stage}
+            </h6>
+          </div>
+
           {currentStageIndex > 0 && (
-            <div className="d-flex gap-2 mt-4">
+            <div className="d-flex gap-2">
               <button className="btn btn-secondary" onClick={handleBack}>
                 Back
               </button>
