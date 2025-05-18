@@ -6,8 +6,11 @@ import ImageCanvas from "./ImageCanvas.jsx";
 const STAGES = {
   UPLOAD: "upload image",
   PARAMS: "tune parameters",
+  BLOCK: "detect blocks",
   EDIT: "edit circles",
 };
+
+const STAGE_ORDER = [STAGES.UPLOAD, STAGES.PARAMS, STAGES.BLOCK, STAGES.EDIT];
 
 const App = () => {
   const [stage, setStage] = useState(STAGES.UPLOAD);
@@ -28,18 +31,23 @@ const App = () => {
     { id: 10, cx: 3550, cy: 10000, r: 80, cluster: -1 },
   ]);
 
+  const currentStageIndex = STAGE_ORDER.indexOf(stage);
+
   const handleImageUploaded = (imageData) => {
     setPreviewImage(imageData);
     setStage(STAGES.PARAMS);
   };
 
   const handleNext = () => {
-    if (stage === STAGES.PARAMS) setStage(STAGES.EDIT);
+    if (currentStageIndex < STAGE_ORDER.length - 1) {
+      setStage(STAGE_ORDER[currentStageIndex + 1]);
+    }
   };
 
   const handleBack = () => {
-    if (stage === STAGES.PARAMS) setStage(STAGES.UPLOAD);
-    else if (stage === STAGES.EDIT) setStage(STAGES.PARAMS);
+    if (currentStageIndex > 0) {
+      setStage(STAGE_ORDER[currentStageIndex - 1]);
+    }
   };
 
   return (
@@ -53,47 +61,50 @@ const App = () => {
             overflowY: "auto",
           }}
         >
+          {currentStageIndex > 0 && (
+            <div className="d-flex gap-2 mt-4">
+              <button className="btn btn-secondary" onClick={handleBack}>
+                Back
+              </button>
+              {stage !== STAGES.UPLOAD &&
+                currentStageIndex < STAGE_ORDER.length - 1 && (
+                  <button className="btn btn-primary" onClick={handleNext}>
+                    Next
+                  </button>
+                )}
+            </div>
+          )}
+
           {stage === STAGES.UPLOAD && (
             <ImageUploader onImageUploaded={handleImageUploaded} />
           )}
 
           {stage === STAGES.PARAMS && (
-            <>
-              <div className="d-flex gap-2 mt-3">
-                <button className="btn btn-secondary" onClick={handleBack}>
-                  Back
-                </button>
-                <button className="btn btn-primary" onClick={handleNext}>
-                  Next: Edit Circles
-                </button>
-              </div>
-              <ParamEditor
-                onImageFetched={setTestImage}
-                setCircles={setCircles}
-              />
-            </>
+            <ParamEditor
+              onImageFetched={setTestImage}
+              setCircles={setCircles}
+            />
+          )}
+
+          {stage === STAGES.BLOCK && (
+            <div className="mt-4">
+              <h5>Block Detection Parameters</h5>
+            </div>
           )}
 
           {stage === STAGES.EDIT && (
-            <>
-              <div className="d-flex gap-2 mt-3">
-                <button className="btn btn-secondary" onClick={handleBack}>
-                  Back
-                </button>
-              </div>
-              <div className="form-check my-3">
-                <input
-                  className="form-check-input"
-                  type="checkbox"
-                  id="clusterMode"
-                  checked={clusterMode}
-                  onChange={(e) => setClusterMode(e.target.checked)}
-                />
-                <label className="form-check-label" htmlFor="clusterMode">
-                  Cluster Mode
-                </label>
-              </div>
-            </>
+            <div className="form-check my-3">
+              <input
+                className="form-check-input"
+                type="checkbox"
+                id="clusterMode"
+                checked={clusterMode}
+                onChange={(e) => setClusterMode(e.target.checked)}
+              />
+              <label className="form-check-label" htmlFor="clusterMode">
+                Cluster Mode
+              </label>
+            </div>
           )}
         </div>
 
@@ -119,6 +130,8 @@ const App = () => {
               setCircles={() => {}}
               clusterMode={false}
             />
+          ) : stage === STAGES.BLOCK ? (
+            <p>Block Detection</p>
           ) : (
             <div
               className="text-muted d-flex justify-content-center align-items-center"
