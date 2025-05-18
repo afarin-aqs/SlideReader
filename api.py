@@ -75,6 +75,28 @@ def set_params():
     return jsonify({"status": "success"}), 200
 
 
+@app.route("/get-params", methods=["GET"])
+def get_params():
+    """Get cached params"""
+    filename = data["current_filename"]
+    data_obj = ScanDataObj.get_scan_data(filename)
+    if data_obj is None:
+        return jsonify({"params": {}})
+
+    params = {
+        "scan_size": data_obj.scan_size,
+        "assay": data_obj.assay,
+        "cAb_names": data_obj.cAb_names,
+        **data_obj.preprocess_params,
+        **data_obj.circle_finding_params_hough,
+        **data_obj.clustering_params_DBSCAN
+    }
+    params.pop("method_name")
+    data["params"] = params
+
+    return jsonify({"params": params})
+
+
 @app.route("/test-params", methods=["GET"])
 def test_params():
     """Test params: do circle and cluster detection on a cropped image"""

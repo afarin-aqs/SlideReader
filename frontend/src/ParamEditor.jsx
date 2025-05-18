@@ -5,10 +5,23 @@ import { useParams } from "./ParamsContext.jsx";
 const ParamEditor = ({ onImageFetched, setCircles }) => {
   const { params, setParams } = useParams();
   const [message, setMessage] = useState(null);
+  const [areParamsSet, setAreParamsSet] = useState(false);
 
   useEffect(() => {
-    syncParamsAndFetchImage();
+    loadCachedParams();
   }, []);
+
+  useEffect(() => {
+    if (!areParamsSet) {
+      return;
+    }
+    const saveAndTest = async () => {
+      await saveParams();
+      fetchImage();
+    };
+
+    saveAndTest();
+  }, [areParamsSet]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -18,7 +31,19 @@ const ParamEditor = ({ onImageFetched, setCircles }) => {
     }));
   };
 
-  const syncParamsAndFetchImage = async () => {
+  const loadCachedParams = async () => {
+    try {
+      const response = await axios.get("http://127.0.0.1:5000/get-params");
+      if (response.data.params) {
+        setParams((prev) => ({ ...prev, ...response.data.params }));
+      }
+      setAreParamsSet(true);
+    } catch (error) {
+      console.log("Error initializing parameters or fetching image:", error);
+    }
+  };
+
+  const saveParams = async () => {
     try {
       const response = await axios.post(
         "http://127.0.0.1:5000/set-params",
@@ -32,7 +57,9 @@ const ParamEditor = ({ onImageFetched, setCircles }) => {
       console.error("Error saving parameters:", error);
       alert("An error occurred while saving parameters.");
     }
+  };
 
+  const fetchImage = async () => {
     try {
       const res = await axios.get("http://127.0.0.1:5000/test-params");
       let { image, circles, cluster_ids } = res.data;
@@ -89,7 +116,13 @@ const ParamEditor = ({ onImageFetched, setCircles }) => {
       ))}
 
       <div className="d-flex justify-content-center mt-3">
-        <button className="btn btn-primary" onClick={syncParamsAndFetchImage}>
+        <button
+          className="btn btn-primary"
+          onClick={() => {
+            saveParams();
+            fetchImage();
+          }}
+        >
           Save Parameters
         </button>
       </div>
