@@ -1,7 +1,9 @@
 import numpy as np
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_file
 import cv2
 import base64
+import io
+import pickle
 from flask_cors import CORS
 from copy import deepcopy
 
@@ -9,7 +11,7 @@ from Functions import CommonFunctions, ClassesFunctions
 from Classes import ScanDataObj
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, expose_headers=["Content-Disposition"])
 
 data = {
     "image": None,
@@ -41,17 +43,18 @@ def scale_log_convert_image():
     image = cv2.imdecode(file_bytes, cv2.IMREAD_UNCHANGED)
 
     data["image"] = image
-    data["current_filename"] = file.filename
+    filename = file.filename.strip(".tif")
+    data["current_filename"] = filename
 
     scaled_logged_image = CommonFunctions.give_scaled_log_image(image)
 
     ScanDataObj.add_to_images_dict(
-        file_name=file.filename,
+        file_name=filename,
         dict_key="file_image",
         dict_value=image
     )
     ScanDataObj.add_to_images_dict(
-        file_name=file.filename,
+        file_name=filename,
         dict_key="file_scaled_image",
         dict_value=scaled_logged_image
     )
@@ -149,6 +152,36 @@ def test_block_params():
         return jsonify({"error": "Failed to encode image"}), 500
 
     return jsonify({"image": encoded_image})
+
+
+@app.route("/get-pickle", methods=["GET"])
+def get_pickle():
+    """Send pickle file of data to frontend"""
+    filename = data["current_filename"]
+    data_obj = ScanDataObj.get_scan_data(filename)
+
+    buffer = io.BytesIO()
+    pickle.dump(data_obj, buffer)
+    buffer.seek(0)
+
+    return send_file(
+        buffer,
+        as_attachment=True,
+        download_name=f"{filename}_data_obj.pickle"
+    )
+
+
+@app.route("/load-pickle", methods=["POST"])
+def load_pickle():
+    """Receive a pickle file of data from frontend and load it"""
+    file = request.files["file"]
+    try:
+        buffer = io.BytesIO(file.read())
+        data = pickle.load(buffer)
+        ScanDataObj.update_scan_data_dict(data)
+        return jsonify({"status": "success"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 if __name__ == "__main__":
