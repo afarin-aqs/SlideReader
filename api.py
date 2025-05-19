@@ -1,11 +1,12 @@
-import numpy as np
-from flask import Flask, request, jsonify, send_file
-import cv2
 import base64
 import io
 import pickle
-from flask_cors import CORS
 from copy import deepcopy
+
+import numpy as np
+import cv2
+from flask import Flask, request, jsonify, send_file
+from flask_cors import CORS
 
 from Functions import CommonFunctions, ClassesFunctions
 from Classes import ScanDataObj
