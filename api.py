@@ -143,7 +143,7 @@ def test_block_params():
         block_distance_adjustment=params["block_distance_adjustment"]
     )
     borders_image = ClassesFunctions.plot_blocks_on_image(
-        file_name=filename, display_in_console=False
+        file_name=filename, display_in_console=False, text_color=(0, 0, 0)
     )
     scaled_logged_image = CommonFunctions.give_scaled_log_image(borders_image)
 
