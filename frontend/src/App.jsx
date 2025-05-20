@@ -5,6 +5,7 @@ import Uploader from "./Uploader.jsx";
 import ParamEditor from "./ParamEditor.jsx";
 import BlockParamEditor from "./BlockParamEditor.jsx";
 import ImageCanvas from "./ImageCanvas.jsx";
+import { useParams } from "./ParamsContext.jsx";
 
 const STAGES = {
   UPLOAD: "Upload an image",
@@ -16,6 +17,7 @@ const STAGES = {
 const STAGE_ORDER = [STAGES.UPLOAD, STAGES.PARAMS, STAGES.BLOCK, STAGES.EDIT];
 
 const App = () => {
+  const { params, setParams, resetParams } = useParams();
   const [stage, setStage] = useState(STAGES.UPLOAD);
   const [previewImage, setPreviewImage] = useState(null);
   const [clusterMode, setClusterMode] = useState(false);
@@ -56,6 +58,12 @@ const App = () => {
       console.error("Error downloading pickle file:", error);
       alert("Failed to download pickle file.");
     }
+  };
+
+  const handleReset = async () => {
+    await axios.get("http://127.0.0.1:5000/reset");
+    resetParams();
+    setStage(STAGES.UPLOAD);
   };
 
   return (
@@ -121,12 +129,20 @@ const App = () => {
 
           {stage !== STAGES.UPLOAD && (
             <div className="mt-3">
-              <button
-                className="btn btn-outline-success w-100"
-                onClick={handleSavePickle}
-              >
-                Save Pickle
-              </button>
+              <div className="d-flex gap-2">
+                <button
+                  className="btn btn-outline-primary w-100"
+                  onClick={handleReset}
+                >
+                  Reset
+                </button>
+                <button
+                  className="btn btn-outline-success w-100"
+                  onClick={handleSavePickle}
+                >
+                  Save Pickle
+                </button>
+              </div>
             </div>
           )}
         </div>

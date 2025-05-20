@@ -185,5 +185,20 @@ def load_pickle():
         return jsonify({"error": str(e)}), 500
 
 
+@app.route("/reset", methods=["GET"])
+def reset():
+    """Reset"""
+    ScanDataObj.all_scan_data = {}
+    ScanDataObj.images_dict = {}
+
+    data = {
+        "image": None,
+        "current_filename": None,
+        "params": None
+    }
+
+    return jsonify({"status": "success"}), 200
+
+
 if __name__ == "__main__":
     app.run(debug=True)

@@ -3,7 +3,7 @@ import axios from "axios";
 import { useParams } from "./ParamsContext.jsx";
 
 const ParamEditor = ({ onImageFetched, setCircles }) => {
-  const { params, setParams } = useParams();
+  const { params, setParams, resetParams } = useParams();
   const [message, setMessage] = useState(null);
   const [areParamsSet, setAreParamsSet] = useState(false);
 

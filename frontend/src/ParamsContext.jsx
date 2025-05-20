@@ -24,8 +24,12 @@ const defaultParams = {
 export const ParamsProvider = ({ children }) => {
   const [params, setParams] = useState(defaultParams);
 
+  const resetParams = () => {
+    setParams(defaultParams);
+  };
+
   return (
-    <ParamsContext.Provider value={{ params, setParams }}>
+    <ParamsContext.Provider value={{ params, setParams, resetParams }}>
       {children}
     </ParamsContext.Provider>
   );
