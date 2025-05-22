@@ -11,10 +11,17 @@ const STAGES = {
   UPLOAD: "Upload an image",
   PARAMS: "Tune circle/cluster params",
   BLOCK: "Tune block detection params",
+  INIT: "Initialize circles and blocks data",
   EDIT: "Edit circles",
 };
 
-const STAGE_ORDER = [STAGES.UPLOAD, STAGES.PARAMS, STAGES.BLOCK, STAGES.EDIT];
+const STAGE_ORDER = [
+  STAGES.UPLOAD,
+  STAGES.PARAMS,
+  STAGES.BLOCK,
+  STAGES.INIT,
+  STAGES.EDIT,
+];
 
 const App = () => {
   const { params, setParams, resetParams } = useParams();
@@ -22,6 +29,9 @@ const App = () => {
   const [previewImage, setPreviewImage] = useState(null);
   const [clusterMode, setClusterMode] = useState(false);
   const [testImage, setTestImage] = useState(null);
+  const [initOptimizationEnabled, setInitOptimizationEnabled] = useState(false);
+  const [loadingInit, setLoadingInit] = useState(false);
+  const [initMessage, setInitMessage] = useState("");
 
   // Keys: id, cx, cy, r, cluster
   const [circles, setCircles] = useState([]);
@@ -64,6 +74,24 @@ const App = () => {
     await axios.get("http://127.0.0.1:5000/reset");
     resetParams();
     setStage(STAGES.UPLOAD);
+  };
+
+  const handleInit = async () => {
+    setLoadingInit(true);
+    setInitMessage("");
+
+    try {
+      await axios.post("http://127.0.0.1:5000/init-circles-clusters", {
+        optimization: initOptimizationEnabled,
+      });
+      setInitMessage("Initial circle finding and clustering complete!");
+    } catch (err) {
+      console.error(err);
+      alert("Failed to do initial circle finding and clustering.");
+      setInitMessage("Failed to do initial circle finding and clustering.");
+    } finally {
+      setLoadingInit(false);
+    }
   };
 
   return (
@@ -110,6 +138,41 @@ const App = () => {
 
           {stage === STAGES.BLOCK && (
             <BlockParamEditor onImageFetched={setTestImage} />
+          )}
+
+          {stage === STAGES.INIT && (
+            <>
+              <div className="d-flex gap-2 mt-3">
+                <button
+                  className="btn btn-outline-primary w-100"
+                  onClick={handleInit}
+                >
+                  Run Initialization
+                </button>
+              </div>
+
+              <div className="form-check mb-3 mt-3">
+                <input
+                  className="form-check-input"
+                  type="checkbox"
+                  id="optimizationToggle"
+                  checked={initOptimizationEnabled}
+                  onChange={(e) => setInitOptimizationEnabled(e.target.checked)}
+                />
+                <label
+                  className="form-check-label"
+                  htmlFor="optimizationToggle"
+                >
+                  Enable Optimization
+                </label>
+              </div>
+
+              {loadingInit && (
+                <div className="text-center mt-2">
+                  <div className="spinner-border text-primary" role="status" />
+                </div>
+              )}
+            </>
           )}
 
           {stage === STAGES.EDIT && (
@@ -183,6 +246,14 @@ const App = () => {
                 }}
               />
             </div>
+          ) : stage === STAGES.INIT ? (
+            <>
+              {initMessage && (
+                <div className="alert alert-success mt-3" role="alert">
+                  {initMessage}
+                </div>
+              )}
+            </>
           ) : (
             <div
               className="text-muted d-flex justify-content-center align-items-center"
