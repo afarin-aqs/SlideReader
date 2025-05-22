@@ -155,6 +155,26 @@ def test_block_params():
     return jsonify({"image": encoded_image})
 
 
+@app.route("/init-circles-clusters", methods=["POST"])
+def init_circles_clusters():
+    """Initialize circles and clusters"""
+    optimize_spots_coords = request.get_json().get("optimization")
+
+    filename = data["current_filename"]
+    data_obj = ScanDataObj.get_scan_data(filename)
+
+    CommonFunctions.do_initial_circle_finding(filename)
+    ClassesFunctions.init_clusters_dict(
+        data_obj.sorted_circles,
+        data_obj.predicted_clusters_ids,
+        filename,
+        optimize_spots_coords=optimize_spots_coords
+    )
+    ClassesFunctions.connect_clusters_to_blocks(filename, debug_blocks=[])
+
+    return jsonify({"status": "success"}), 200
+
+
 @app.route("/get-pickle", methods=["GET"])
 def get_pickle():
     """Send pickle file of data to frontend"""
