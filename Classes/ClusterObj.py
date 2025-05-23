@@ -560,7 +560,7 @@ class Cluster:
             #             self.fg_mask_list[i]=fg_label
             self.mean_fg_list[i] = fg_mean
 
-            if plot_images or debug:
+            if plot_images and debug:
                 self.plot_cluster_spot_measurements(
                     bg_label=bg_label,
                     fg_label=fg_label,

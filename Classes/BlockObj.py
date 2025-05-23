@@ -128,6 +128,9 @@ class Block:
         end_y = self.start_y + int(block_size + block_size_adjustment[1])
         self.set_end_coords((end_x, end_y),debug=debug)
 
+        #to remove negative values
+        self.set_start_coords((max(0,start_x), max(0,start_y)), debug=debug)
+
         debug_report(f'in the end x: {(self.start_x, self.end_x)}, y: {(self.start_y, self.end_y)}', debug)
         return
 
