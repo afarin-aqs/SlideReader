@@ -218,6 +218,14 @@ const ImageCanvas = ({ imageSrc, circles, setCircles, clusterMode }) => {
                   const text = document.getElementById(`cluster-label-${c.id}`);
                   if (text) text.style.display = "none";
                 }}
+                onDoubleClick={() => {
+                  const confirmDelete = window.confirm("Delete this circle?");
+                  if (confirmDelete) {
+                    setCircles((prev) =>
+                      prev.filter((circle) => circle.id !== c.id),
+                    );
+                  }
+                }}
               />
               <rect
                 x={c.cx + c.r - 4}

@@ -262,6 +262,32 @@ const App = () => {
                   Cluster Mode
                 </label>
               </div>
+
+              <button
+                className="btn btn-primary"
+                onClick={() => {
+                  const clusterInput = prompt(
+                    "Enter cluster ID for new circle:",
+                  );
+                  if (clusterInput !== null && !isNaN(clusterInput)) {
+                    const clusterId = parseInt(clusterInput);
+                    const newCircle = {
+                      id: circles.length + 1,
+                      cx: 100,
+                      cy: 100,
+                      r: 15,
+                      cluster: clusterId,
+                    };
+                    setCircles([...circles, newCircle]);
+                  }
+                }}
+              >
+                Add Circle
+              </button>
+
+              <small className="text-muted d-block mt-1">
+                Double click a circle to delete
+              </small>
             </>
           )}
 
