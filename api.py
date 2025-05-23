@@ -175,6 +175,35 @@ def init_circles_clusters():
     return jsonify({"status": "success"}), 200
 
 
+@app.route("/get-block-data/r<int:r>c<int:c>", methods=["GET"])
+def get_block_data(r, c):
+    """Get circles and clusters data of block at specified row and column"""
+    filename = data["current_filename"]
+
+    data_obj = ScanDataObj.get_scan_data(filename)
+    block = data_obj.get_block(f"r{r}c{c}")
+    scaled_image = ScanDataObj.get_block_image(
+        filename, block.block_id, image_tag="scaled_image"
+    )
+    colored_image = CommonFunctions.make_3D_image(scaled_image)
+    success, encoded_image = encode_image(colored_image)
+
+    all_circles = []
+    for cluster_id in block.clusters_ids_list:
+        cluster = data_obj.get_cluster(cluster_id)
+        cluster.sort_coords_lists()
+        circles = cluster.spots_coords_in_block_list
+        circles = [
+            np.append(arr, cluster_id) for arr in circles
+        ]  # Add cluster_id to x, y, r
+        all_circles.extend(circles)
+
+    return jsonify({
+        "image": encoded_image,
+        "circles": [circle.tolist() for circle in all_circles],
+    })
+
+
 @app.route("/get-pickle", methods=["GET"])
 def get_pickle():
     """Send pickle file of data to frontend"""
