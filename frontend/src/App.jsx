@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import axios from "axios";
 import { saveAs } from "file-saver";
 import Uploader from "./Uploader.jsx";
@@ -32,9 +32,17 @@ const App = () => {
   const [initOptimizationEnabled, setInitOptimizationEnabled] = useState(false);
   const [loadingInit, setLoadingInit] = useState(false);
   const [initMessage, setInitMessage] = useState("");
+  const [r, setR] = useState(0);
+  const [c, setC] = useState(0);
 
   // Keys: id, cx, cy, r, cluster
   const [circles, setCircles] = useState([]);
+
+  useEffect(() => {
+    if (stage === STAGES.EDIT) {
+      handleGetBlockData();
+    }
+  }, [stage, r, c]);
 
   const currentStageIndex = STAGE_ORDER.indexOf(stage);
 
@@ -91,6 +99,39 @@ const App = () => {
       setInitMessage("Failed to do initial circle finding and clustering.");
     } finally {
       setLoadingInit(false);
+    }
+  };
+
+  const handleRowChange = (e) => {
+    const value = parseInt(e.target.value);
+    setR(value);
+  };
+  const handleColChange = (e) => {
+    const value = parseInt(e.target.value);
+    setC(value);
+  };
+
+  const handleGetBlockData = async () => {
+    try {
+      const res = await axios.get(
+        `http://127.0.0.1:5000/get-block-data/r${r}c${c}`,
+      );
+      let { image, circles } = res.data;
+
+      const img = `data:image/png;base64,${image}`;
+      setPreviewImage(img);
+
+      circles = circles.map(([cx, cy, r, cluster_id], index) => ({
+        id: index + 1,
+        cx,
+        cy,
+        r,
+        cluster: cluster_id,
+      }));
+      setCircles(circles);
+    } catch (error) {
+      console.error("Error fetching block data:", error);
+      alert("Error fetching block data");
     }
   };
 
@@ -176,18 +217,52 @@ const App = () => {
           )}
 
           {stage === STAGES.EDIT && (
-            <div className="form-check my-3">
-              <input
-                className="form-check-input"
-                type="checkbox"
-                id="clusterMode"
-                checked={clusterMode}
-                onChange={(e) => setClusterMode(e.target.checked)}
-              />
-              <label className="form-check-label" htmlFor="clusterMode">
-                Cluster Mode
-              </label>
-            </div>
+            <>
+              <div className="d-flex align-items-end gap-2 mb-3">
+                <div className="col-6">
+                  <label htmlFor="rowInput" className="form-label">
+                    r
+                  </label>
+                  <input
+                    type="number"
+                    id="rowInput"
+                    className="form-control"
+                    min={0}
+                    max={7}
+                    value={r}
+                    onChange={handleRowChange}
+                  />
+                </div>
+
+                <div className="col-6">
+                  <label htmlFor="colInput" className="form-label">
+                    c
+                  </label>
+                  <input
+                    type="number"
+                    id="colInput"
+                    className="form-control"
+                    min={0}
+                    max={2}
+                    value={c}
+                    onChange={handleColChange}
+                  />
+                </div>
+              </div>
+
+              <div className="form-check my-3">
+                <input
+                  className="form-check-input"
+                  type="checkbox"
+                  id="clusterMode"
+                  checked={clusterMode}
+                  onChange={(e) => setClusterMode(e.target.checked)}
+                />
+                <label className="form-check-label" htmlFor="clusterMode">
+                  Cluster Mode
+                </label>
+              </div>
+            </>
           )}
 
           {stage !== STAGES.UPLOAD && (
