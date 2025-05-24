@@ -135,14 +135,19 @@ def test_block_params():
     """Test block params: do block detection"""
     params = request.get_json()
     filename = data["current_filename"]
+    data_obj = ScanDataObj.get_scan_data(filename)
 
-    ClassesFunctions.init_blocks_dict(
-        file_name=filename,
-        plot_blocks=False,
-        init_offset=params["init_offset"],
-        block_size_adjustment=params["block_size_adjustment"],
-        block_distance_adjustment=params["block_distance_adjustment"]
-    )
+    if data_obj.blocks_dict == {}:
+        ClassesFunctions.init_blocks_dict(
+            file_name=filename,
+            plot_blocks=False,
+            init_offset=params["init_offset"],
+            block_size_adjustment=params["block_size_adjustment"],
+            block_distance_adjustment=params["block_distance_adjustment"]
+        )
+    else:
+        for block in data_obj.blocks_dict.values():
+            block.add_cropped_images()
     borders_image = ClassesFunctions.plot_blocks_on_image(
         file_name=filename, display_in_console=False, text_color=(0, 0, 0)
     )
