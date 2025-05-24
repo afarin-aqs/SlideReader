@@ -17,7 +17,8 @@ CORS(app, expose_headers=["Content-Disposition"])
 data = {
     "image": None,
     "current_filename": None,
-    "params": None
+    "params": None,
+    "block_params": None
 }
 
 
@@ -137,7 +138,9 @@ def test_block_params():
     filename = data["current_filename"]
     data_obj = ScanDataObj.get_scan_data(filename)
 
-    if data_obj.blocks_dict == {}:
+    old_params = data["block_params"]
+    # Initialize blocks only when no data or params have changed
+    if data_obj.blocks_dict == {} or params != old_params:
         ClassesFunctions.init_blocks_dict(
             file_name=filename,
             plot_blocks=False,
@@ -248,7 +251,8 @@ def reset():
     data = {
         "image": None,
         "current_filename": None,
-        "params": None
+        "params": None,
+        "block_params": None
     }
 
     return jsonify({"status": "success"}), 200
