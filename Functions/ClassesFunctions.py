@@ -353,7 +353,7 @@ def read_command(command, debug=False):
 
     # Add spots command: add + count + left(l)/right(r) -> 'add 1 to r', 'add 2 to left'
     elif command.startswith('add'):
-        count, direction = re.search(r'add (\d+) to (r|l|right|left)', command).groups()
+        count, direction = re.search(r'add (\d+) to (r|l|right|left|abs)', command).groups()
         debug_report(f"Add Command - Count: {int(count)}, Direction: {direction}", debug)
         return {'action': "add", "params": {"count": count, "direction": direction}}
 
