@@ -14,11 +14,17 @@ from Classes import ScanDataObj
 app = Flask(__name__)
 CORS(app, expose_headers=["Content-Disposition"])
 
+default_block_params = {
+    "init_offset": [0, 0],
+    "block_size_adjustment": 0,
+    "block_distance_adjustment": [0, 0]
+}
+
 data = {
     "image": None,
     "current_filename": None,
     "params": None,
-    "block_params": None
+    "block_params": default_block_params
 }
 
 
@@ -47,6 +53,8 @@ def scale_log_convert_image():
     data["image"] = image
     filename = file.filename.strip(".tif")
     data["current_filename"] = filename
+    data["params"] = None
+    data["block_params"] = default_block_params
 
     scaled_logged_image = CommonFunctions.give_scaled_log_image(image)
 
@@ -141,6 +149,8 @@ def test_block_params():
     old_params = data["block_params"]
     # Initialize blocks only when no data or params have changed
     if data_obj.blocks_dict == {} or params != old_params:
+        print("Saving block params and initializing blocks")
+        data["block_params"] = params
         ClassesFunctions.init_blocks_dict(
             file_name=filename,
             plot_blocks=False,
@@ -148,9 +158,8 @@ def test_block_params():
             block_size_adjustment=params["block_size_adjustment"],
             block_distance_adjustment=params["block_distance_adjustment"]
         )
-    else:
-        for block in data_obj.blocks_dict.values():
-            block.add_cropped_images()
+    for block in data_obj.blocks_dict.values():
+        block.add_cropped_images()
     borders_image = ClassesFunctions.plot_blocks_on_image(
         file_name=filename, display_in_console=False, text_color=(0, 0, 0)
     )
@@ -252,7 +261,7 @@ def reset():
         "image": None,
         "current_filename": None,
         "params": None,
-        "block_params": None
+        "block_params": default_block_params
     }
 
     return jsonify({"status": "success"}), 200
