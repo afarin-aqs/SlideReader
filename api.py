@@ -24,7 +24,8 @@ data = {
     "image": None,
     "current_filename": None,
     "params": None,
-    "block_params": default_block_params
+    "block_params": default_block_params,
+    "edit_commands": {}
 }
 
 
@@ -221,6 +222,30 @@ def get_block_data(r, c):
     })
 
 
+@app.route("/add-edit-command/r<int:r>c<int:c>", methods=["POST"])
+def add_edit_command(r, c):
+    """Add edit command for specified block and edit block with all commands"""
+    command = request.get_json()["command"]
+    cluster = request.get_json()["cluster"]
+    if f"r{r}c{c}" not in data["edit_commands"]:
+        data["edit_commands"][f"r{r}c{c}"] = {}
+    if cluster not in data["edit_commands"][f"r{r}c{c}"]:
+        data["edit_commands"][f"r{r}c{c}"][cluster] = []
+    data["edit_commands"][f"r{r}c{c}"][cluster].append(command)
+
+    filename = data["current_filename"]
+    data_obj = ScanDataObj.get_scan_data(filename)
+    block = data_obj.get_block(f"r{r}c{c}")
+    block.edit_block(
+        manual_spot_edit_dict=data["edit_commands"].get(f"r{r}c{c}"),
+        plot_before_after=False,
+        overwrite=True,
+        with_restore=True
+    )
+
+    return jsonify({"status": "success"}), 200
+
+
 @app.route("/get-pickle", methods=["GET"])
 def get_pickle():
     """Send pickle file of data to frontend"""
@@ -261,7 +286,8 @@ def reset():
         "image": None,
         "current_filename": None,
         "params": None,
-        "block_params": default_block_params
+        "block_params": default_block_params,
+        "edit_commands": {}
     }
 
     return jsonify({"status": "success"}), 200
