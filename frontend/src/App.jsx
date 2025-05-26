@@ -135,6 +135,14 @@ const App = () => {
     }
   };
 
+  const sendEditCommand = async (cluster, command) => {
+    await axios.post(`http://127.0.0.1:5000/add-edit-command/r${r}c${c}`, {
+      cluster: cluster,
+      command: command,
+    });
+    handleGetBlockData();
+  };
+
   return (
     <div className="container-fluid">
       <div className="row">
@@ -272,13 +280,14 @@ const App = () => {
                   if (clusterInput !== null && !isNaN(clusterInput)) {
                     const clusterId = parseInt(clusterInput);
                     const newCircle = {
-                      id: circles.length + 1,
-                      cx: 100,
-                      cy: 100,
+                      id: circles.length,
+                      cx: 25,
+                      cy: 25,
                       r: 15,
                       cluster: clusterId,
                     };
                     setCircles([...circles, newCircle]);
+                    sendEditCommand(clusterId, "add 1 to abs");
                   }
                 }}
               >
@@ -325,6 +334,7 @@ const App = () => {
               circles={circles}
               setCircles={setCircles}
               clusterMode={clusterMode}
+              sendEditCommand={sendEditCommand}
             />
           ) : stage === STAGES.PARAMS && testImage ? (
             <ImageCanvas

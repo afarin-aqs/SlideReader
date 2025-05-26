@@ -1,6 +1,12 @@
 import { useRef, useState, useEffect } from "react";
 
-const ImageCanvas = ({ imageSrc, circles, setCircles, clusterMode }) => {
+const ImageCanvas = ({
+  imageSrc,
+  circles,
+  setCircles,
+  clusterMode,
+  sendEditCommand = () => {},
+}) => {
   const containerRef = useRef(null);
   const [scale, setScale] = useState(1);
   const [translate, setTranslate] = useState({ x: 0, y: 0 });
@@ -108,6 +114,11 @@ const ImageCanvas = ({ imageSrc, circles, setCircles, clusterMode }) => {
     const onMouseUp = () => {
       window.removeEventListener("mousemove", onMouseMove);
       window.removeEventListener("mouseup", onMouseUp);
+
+      const dx = (window.event.clientX - startX) / scale;
+      const dy = (window.event.clientY - startY) / scale;
+
+      sendMoveCommand(circle, dx, dy);
     };
 
     window.addEventListener("mousemove", onMouseMove);
@@ -142,6 +153,9 @@ const ImageCanvas = ({ imageSrc, circles, setCircles, clusterMode }) => {
     const onMouseUp = () => {
       window.removeEventListener("mousemove", onMouseMove);
       window.removeEventListener("mouseup", onMouseUp);
+
+      const dx = (window.event.clientX - startX) / scale;
+      sendResizeCommand(circle, dx);
     };
 
     window.addEventListener("mousemove", onMouseMove);
@@ -168,6 +182,50 @@ const ImageCanvas = ({ imageSrc, circles, setCircles, clusterMode }) => {
       return color;
     };
   })();
+
+  const getCircleIndexInCluster = (circle) => {
+    const cluster = circle.cluster;
+    const clusterCircles = circles.filter((c) => c.cluster === circle.cluster);
+    const sortedClusterCircles = [...clusterCircles].sort(
+      (a, b) => a.cx - b.cx,
+    );
+    const index = sortedClusterCircles.findIndex((c) => c.id === circle.id);
+    return index;
+  };
+
+  const sendDeleteCommand = (circle) => {
+    const cluster = circle.cluster;
+    const index = getCircleIndexInCluster(circle);
+    sendEditCommand(cluster, `del spot${index}`);
+  };
+
+  const sendMoveCommand = (circle, dx, dy) => {
+    const cluster = circle.cluster;
+    const index = getCircleIndexInCluster(circle);
+
+    const moves = [];
+    if (dy !== 0)
+      moves.push(`${Math.abs(Math.round(dy))} ${dy > 0 ? "down" : "up"}`);
+    if (dx !== 0)
+      moves.push(`${Math.abs(Math.round(dx))} ${dx > 0 ? "right" : "left"}`);
+
+    if (moves.length !== 0) {
+      moves.forEach((m) => {
+        sendEditCommand(cluster, `move spot${index} ${m}`);
+      });
+    }
+  };
+
+  const sendResizeCommand = (circle, dx) => {
+    const cluster = circle.cluster;
+    const index = getCircleIndexInCluster(circle);
+    if (dx !== 0) {
+      sendEditCommand(
+        cluster,
+        `change_r spot${index} r${dx > 0 ? "+" : ""}${Math.round(dx)}`,
+      );
+    }
+  };
 
   return (
     <div
@@ -221,6 +279,7 @@ const ImageCanvas = ({ imageSrc, circles, setCircles, clusterMode }) => {
                 onDoubleClick={() => {
                   const confirmDelete = window.confirm("Delete this circle?");
                   if (confirmDelete) {
+                    sendDeleteCommand(c);
                     setCircles((prev) =>
                       prev.filter((circle) => circle.id !== c.id),
                     );
