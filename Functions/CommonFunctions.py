@@ -885,7 +885,7 @@ def optimize_the_params(file_name, how_many_times=1, input_image=None,
 
 
 # %%
-def test_current_parameters(input_image, file_name, fig_size=None, debug=False):
+def test_current_parameters(input_image, file_name, fig_size=None, debug=False, plot_image=True):
     if fig_size is None:
         fig_size = [10, 10]
 
@@ -904,12 +904,12 @@ def test_current_parameters(input_image, file_name, fig_size=None, debug=False):
         sorted_circles=test_sorted_circles,
         input_image=input_image,
         params=scan_data.clustering_params_DBSCAN,
-        plot_images=True,
+        plot_images=plot_image,
         debug=debug,
         debug_clusters_ids=[],
         fig_size=fig_size,
     )
-    return
+    return test_sorted_circles, test_predicted_clusters_ids
 
 
 # %%

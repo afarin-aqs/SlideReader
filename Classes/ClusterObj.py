@@ -207,7 +207,7 @@ class Cluster:
         self.add_spots_coords_in_block(debug=debug)
         debug_report(f'after: #spots={len(self.spots_coords_list)}\n', debug)
 
-    def add_spots(self, count, direction, debug=False):  # direction: 'r' or 'right'/ 'l' or 'left'
+    def add_spots(self, count, direction, debug=False, absolute_pos=None):  # direction: 'r' or 'right'/ 'l' or 'left'
         data_obj = ScanDataObj.get_scan_data(self.file_name)
         avg_cAb_dist = data_obj.avg_spot_distance
 
@@ -227,14 +227,21 @@ class Cluster:
         elif direction in ["left", "l"]:
             ref_spot_coords = self.spots_coords_list[0]
             avg_x_dist = -avg_x_dist
+        elif direction == "abs":
+            ref_spot_coords = None
         else:
-            print(f'{direction} is not supported! use either "right"/"r" or "left"/"l"')
+            print(f'{direction} is not supported! use either "right"/"r" or "left"/"l" or "abs"')
             ref_spot_coords = [0,0,0]
         debug_report(f'reference spot coords={ref_spot_coords} and avg_x_dist={avg_x_dist}', debug)
 
-        for i in range(int(count)):
-            new_spot_coords = ref_spot_coords.copy()
-            new_spot_coords[0] += avg_x_dist * (i + 1)
+        if absolute_pos is None:
+            for i in range(int(count)):
+                new_spot_coords = ref_spot_coords.copy()
+                new_spot_coords[0] += avg_x_dist * (i + 1)
+                self.spots_coords_list.append(new_spot_coords)
+                debug_report(f'added a new spot->{new_spot_coords}', debug)
+        else:
+            new_spot_coords = absolute_pos
             self.spots_coords_list.append(new_spot_coords)
             debug_report(f'added a new spot->{new_spot_coords}', debug)
 
@@ -373,7 +380,9 @@ class Cluster:
                     self.already_restored = True
                 count = params['count']
                 direction = params['direction']
-                self.add_spots(count, direction, debug=debug)
+                block = data_obj.get_block(self.block_id)
+                absolute_pos = [block.start_x + 25, block.start_y + 25, 15] if direction == "abs" else None
+                self.add_spots(count, direction, debug=debug, absolute_pos=absolute_pos)
 
             elif action == "move":
                 if not self.already_restored:

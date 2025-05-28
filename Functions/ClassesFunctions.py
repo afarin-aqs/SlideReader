@@ -299,7 +299,7 @@ def read_scan_data_from_pickle(file_name, path, start_over=False, plot_results=F
 
 
 #%%
-def plot_blocks_on_image(file_name, blocks_ids_lists=None, debug=False):
+def plot_blocks_on_image(file_name, blocks_ids_lists=None, debug=False, display_in_console=True, text_color=(255, 255, 255)):
     data_obj = ScanDataObj.get_scan_data(file_name)
     blocks_ids_lists = list(data_obj.get_blocks_dict().keys())
     input_image = deepcopy(ScanDataObj.get_image_from_dict(file_name=file_name, dict_key='file_image'))
@@ -318,8 +318,9 @@ def plot_blocks_on_image(file_name, blocks_ids_lists=None, debug=False):
         block = data_obj.get_block(block_id)
         cv2.rectangle(borders_image, (block.start_x, block.start_y), (block.end_x, block.end_y), (0, 0, 0), 10)
         cv2.putText(borders_image, block_id, (block.start_x + 10, block.start_y + 50), cv2.FONT_HERSHEY_SIMPLEX, 10,
-                    (255, 255, 255), 20)
-    CommonFunctions.display_in_console(borders_image)
+                    text_color, 20)
+    if display_in_console:
+        CommonFunctions.display_in_console(borders_image)
     return borders_image
 
 
@@ -352,7 +353,7 @@ def read_command(command, debug=False):
 
     # Add spots command: add + count + left(l)/right(r) -> 'add 1 to r', 'add 2 to left'
     elif command.startswith('add'):
-        count, direction = re.search(r'add (\d+) to (r|l|right|left)', command).groups()
+        count, direction = re.search(r'add (\d+) to (r|l|right|left|abs)', command).groups()
         debug_report(f"Add Command - Count: {int(count)}, Direction: {direction}", debug)
         return {'action': "add", "params": {"count": count, "direction": direction}}
 
