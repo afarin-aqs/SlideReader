@@ -839,6 +839,9 @@ class Cluster:
         other_cluster = ScanDataObj.get_scan_data(self.file_name).get_cluster(other_cluster_id)
         for i, other_coords in enumerate(other_cluster.spots_coords_in_block_list):
             if i not in dont_use_these['for_other']:
+                if (np.array(offsets_vec)+np.array(other_coords)).any() < 0:
+                    print(f'This spot is out of bounds! -> spot{i}, cluster{self.cluster_id}')
+                    continue
                 new_coords_list.append(np.array(offsets_vec)+np.array(other_coords))
                 # new_coords_list.append(other_coords)
 

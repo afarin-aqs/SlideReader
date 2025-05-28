@@ -437,6 +437,12 @@ start x,y: {(self.start_x, self.start_y)}, backup start x,y: {(self.backup_start
             #                 debug_report(f'skipping cluster{cluster_id} because it has already been done!', debug)
             #                 continue
             cluster.signal_list = [fg - bg for fg, bg in zip(cluster.mean_fg_list, cluster.mean_bg_list)]
+            print(cluster.mean_fg_list, cluster.mean_bg_list, cluster.signal_list)
+            cluster.mean_fg_list = [0 if np.isnan(x) else x for x in cluster.mean_fg_list]
+            cluster.mean_bg_list = [0 if np.isnan(x) else x for x in cluster.mean_bg_list]
+            cluster.signal_list = [0 if np.isnan(x) else x for x in cluster.signal_list]
+            print(cluster.mean_fg_list, cluster.mean_bg_list,cluster.signal_list)
+
             debug_report(
                 f"""working on cluster {cluster_id}: with fg={[int(x) for x in cluster.mean_fg_list]}, bg={[int(x) for x in cluster.mean_bg_list]} => signal = {[int(x) for x in cluster.signal_list]}""",
                 debug)
